@@ -1,0 +1,22 @@
+version: "2"
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/mickamy/go-typesafe-i18n
+
+linters:
+  enable-all: true
+  disable:
+    - gochecknoglobals # Disable global variable checks
+    - gochecknoinits   # Disable init function checks
+    - nlreturn # Disable naked return checks
+    - wsl # Disable whitespace checks
+
+issues:
+  max-issues-per-linter: 0
+  max-same-issues: 0
