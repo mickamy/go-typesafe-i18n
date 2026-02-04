@@ -7,7 +7,7 @@ import (
 
 	"golang.org/x/text/language"
 
-	"github.com/mickamy/go-typesafe-i18n"
+	i18n "github.com/mickamy/go-typesafe-i18n"
 )
 
 func TestNewBundle(t *testing.T) {
