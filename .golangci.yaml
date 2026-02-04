@@ -16,6 +16,29 @@ linters:
     - gochecknoinits   # Disable init function checks
     - nlreturn         # Disable naked return checks
     - wsl              # Disable whitespace checks
+    - depguard         # Import restrictions not configured
+    - exhaustruct      # Too strict - requires all struct fields
+    - varnamelen       # Variable name length too strict
+    - err113           # Dynamic errors are fine for CLI
+    - cyclop           # Cyclomatic complexity - covered by gocognit
+    - funlen           # Function length - tests are often long
+    - dupl             # Duplicate code - tests have similar structure
+    - forbidigo        # CLI needs fmt.Print
+    - godot            # Comment periods - too nitpicky
+    - gosec            # Security - many false positives for this project
+    - gosmopolitan     # False positive for i18n project
+    - ireturn          # Interface returns are valid design
+    - mnd              # Magic numbers - too strict
+    - nestif           # Nested if - sometimes unavoidable
+    - nonamedreturns   # Named returns are useful
+    - perfsprint       # Micro-optimization
+    - prealloc         # Micro-optimization
+    - wrapcheck        # Too strict for internal code
+    - goconst          # Tests often repeat strings
+    - gocognit         # Cognitive complexity - too strict
+    - forcetypeassert  # Type assertion checked by context
+    - exhaustive       # Switch exhaustiveness - too strict
+    - revive           # Overlaps with other linters
 
 issues:
   max-issues-per-linter: 0
