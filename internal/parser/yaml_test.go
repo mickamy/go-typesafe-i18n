@@ -1,8 +1,10 @@
-package parser
+package parser_test
 
 import (
 	"reflect"
 	"testing"
+
+	"github.com/mickamy/go-typesafe-i18n/internal/parser"
 )
 
 func TestYAMLParser_Parse(t *testing.T) {
@@ -70,7 +72,7 @@ total_price: "Total: ${price:float}"
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			p := &YAMLParser{}
+			p := &parser.YAMLParser{}
 			result, err := p.Parse([]byte(tt.input))
 
 			if tt.wantErr {
@@ -108,13 +110,13 @@ func TestYAMLParser_ParseMessages(t *testing.T) {
 	tests := []struct {
 		name     string
 		input    string
-		expected []Message
+		expected []parser.Message
 		wantErr  bool
 	}{
 		{
 			name:  "no placeholders",
 			input: `greeting: "Hello"`,
-			expected: []Message{
+			expected: []parser.Message{
 				{
 					Key:          "greeting",
 					Template:     "Hello",
@@ -125,12 +127,12 @@ func TestYAMLParser_ParseMessages(t *testing.T) {
 		{
 			name:  "string placeholder",
 			input: `hello: "Hello, {name}!"`,
-			expected: []Message{
+			expected: []parser.Message{
 				{
 					Key:      "hello",
 					Template: "Hello, {name}!",
-					Placeholders: []Placeholder{
-						{Name: "name", Type: TypeString},
+					Placeholders: []parser.Placeholder{
+						{Name: "name", Type: parser.TypeString},
 					},
 				},
 			},
@@ -138,12 +140,12 @@ func TestYAMLParser_ParseMessages(t *testing.T) {
 		{
 			name:  "int placeholder",
 			input: `count: "{count:int} items"`,
-			expected: []Message{
+			expected: []parser.Message{
 				{
 					Key:      "count",
 					Template: "{count:int} items",
-					Placeholders: []Placeholder{
-						{Name: "count", Type: TypeInt},
+					Placeholders: []parser.Placeholder{
+						{Name: "count", Type: parser.TypeInt},
 					},
 				},
 			},
@@ -151,12 +153,12 @@ func TestYAMLParser_ParseMessages(t *testing.T) {
 		{
 			name:  "float placeholder",
 			input: `price: "Total: ${price:float}"`,
-			expected: []Message{
+			expected: []parser.Message{
 				{
 					Key:      "price",
 					Template: "Total: ${price:float}",
-					Placeholders: []Placeholder{
-						{Name: "price", Type: TypeFloat64},
+					Placeholders: []parser.Placeholder{
+						{Name: "price", Type: parser.TypeFloat64},
 					},
 				},
 			},
@@ -164,14 +166,14 @@ func TestYAMLParser_ParseMessages(t *testing.T) {
 		{
 			name:  "multiple placeholders",
 			input: `transfer: "Transfer {amount:int} from {from} to {to}"`,
-			expected: []Message{
+			expected: []parser.Message{
 				{
 					Key:      "transfer",
 					Template: "Transfer {amount:int} from {from} to {to}",
-					Placeholders: []Placeholder{
-						{Name: "amount", Type: TypeInt},
-						{Name: "from", Type: TypeString},
-						{Name: "to", Type: TypeString},
+					Placeholders: []parser.Placeholder{
+						{Name: "amount", Type: parser.TypeInt},
+						{Name: "from", Type: parser.TypeString},
+						{Name: "to", Type: parser.TypeString},
 					},
 				},
 			},
@@ -179,12 +181,12 @@ func TestYAMLParser_ParseMessages(t *testing.T) {
 		{
 			name:  "duplicate placeholder uses first occurrence",
 			input: `repeat: "{name} and {name} again"`,
-			expected: []Message{
+			expected: []parser.Message{
 				{
 					Key:      "repeat",
 					Template: "{name} and {name} again",
-					Placeholders: []Placeholder{
-						{Name: "name", Type: TypeString},
+					Placeholders: []parser.Placeholder{
+						{Name: "name", Type: parser.TypeString},
 					},
 				},
 			},
@@ -195,12 +197,12 @@ func TestYAMLParser_ParseMessages(t *testing.T) {
 user:
   greeting: "Hello, {name}!"
 `,
-			expected: []Message{
+			expected: []parser.Message{
 				{
 					Key:      "user.greeting",
 					Template: "Hello, {name}!",
-					Placeholders: []Placeholder{
-						{Name: "name", Type: TypeString},
+					Placeholders: []parser.Placeholder{
+						{Name: "name", Type: parser.TypeString},
 					},
 				},
 			},
@@ -216,7 +218,7 @@ user:
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			p := &YAMLParser{}
+			p := &parser.YAMLParser{}
 			messages, err := p.ParseMessages([]byte(tt.input))
 
 			if tt.wantErr {
