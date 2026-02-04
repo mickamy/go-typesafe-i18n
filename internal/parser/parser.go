@@ -47,18 +47,32 @@ func (t PlaceholderType) String() string {
 	}
 }
 
-// Parser parses a locale file and returns a flat map of messages.
+// Parser parses a locale file.
 type Parser interface {
+	// Parse returns a flat map of messages (for runtime).
 	Parse(data []byte) (*Result, error)
+	// ParseMessages returns messages with placeholder info (for codegen).
+	ParseMessages(data []byte) ([]Message, error)
 }
 
 // ParseFile parses a file using the appropriate parser based on file extension.
+// Used by the runtime Bundle.
 func ParseFile(path string, data []byte) (*Result, error) {
-	parser, err := parserForExtension(filepath.Ext(path))
+	p, err := parserForExtension(filepath.Ext(path))
 	if err != nil {
 		return nil, err
 	}
-	return parser.Parse(data)
+	return p.Parse(data)
+}
+
+// ParseMessagesFile parses a file and returns messages with placeholder info.
+// Used by the code generator.
+func ParseMessagesFile(path string, data []byte) ([]Message, error) {
+	p, err := parserForExtension(filepath.Ext(path))
+	if err != nil {
+		return nil, err
+	}
+	return p.ParseMessages(data)
 }
 
 // parserForExtension returns the appropriate parser for the given file extension.
