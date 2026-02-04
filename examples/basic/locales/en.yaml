@@ -1,6 +1,8 @@
 greeting: "Hello"
 hello: "Hello, {name}!"
-items_count: "{count:int} items"
+items_count:
+  one: "You have 1 item"
+  other: "You have {count:int} items"
 total_price: "Total: ${price:float}"
 user:
   not_found: "User not found"

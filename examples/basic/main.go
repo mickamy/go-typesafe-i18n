@@ -20,7 +20,8 @@ func main() {
 	en := bundle.Localizer(language.English)
 	fmt.Println(en.Localize(messages.Greeting()))
 	fmt.Println(en.Localize(messages.Hello("World")))
-	fmt.Println(en.Localize(messages.ItemsCount(5)))
+	fmt.Println(en.Localize(messages.ItemsCount(1))) // plural: one
+	fmt.Println(en.Localize(messages.ItemsCount(5))) // plural: other
 	fmt.Println(en.Localize(messages.TotalPrice(1234.56)))
 	fmt.Println(en.Localize(messages.UserNotFound()))
 	fmt.Println(en.Localize(messages.UserDeleted("Alice")))
@@ -30,7 +31,8 @@ func main() {
 	ja := bundle.Localizer(language.Japanese)
 	fmt.Println(ja.Localize(messages.Greeting()))
 	fmt.Println(ja.Localize(messages.Hello("太郎")))
-	fmt.Println(ja.Localize(messages.ItemsCount(5)))
+	fmt.Println(ja.Localize(messages.ItemsCount(1))) // plural: other (Japanese has no "one" form)
+	fmt.Println(ja.Localize(messages.ItemsCount(5))) // plural: other
 	fmt.Println(ja.Localize(messages.TotalPrice(1234.56)))
 	fmt.Println(ja.Localize(messages.UserNotFound()))
 	fmt.Println(ja.Localize(messages.UserDeleted("Alice")))

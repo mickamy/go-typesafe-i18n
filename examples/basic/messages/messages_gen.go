@@ -21,13 +21,15 @@ func Hello(name string) i18n.Message {
 }
 
 // ItemsCount returns a Message for "items_count".
-// Template: {count:int} items
+// one: You have 1 item
+// other: You have {count:int} items
 func ItemsCount(count int) i18n.Message {
 	return i18n.Message{
 		ID: "items_count",
 		Args: map[string]any{
 			"count": count,
 		},
+		PluralCount: &count,
 	}
 }
 
