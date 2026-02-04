@@ -54,12 +54,15 @@ type templateData struct {
 
 // messageData holds data for a single message in the template.
 type messageData struct {
-	Key          string
-	Template     string
-	FuncName     string
-	ParamList    string
-	HasArgs      bool
-	Placeholders []placeholderData
+	Key              string
+	Template         string
+	FuncName         string
+	ParamList        string
+	HasArgs          bool
+	Placeholders     []placeholderData
+	IsPlural         bool
+	PluralForms      map[string]string
+	PluralCountParam string
 }
 
 // placeholderData holds data for a placeholder in the template.
@@ -76,10 +79,12 @@ func generateCode(packageName string, messages []parser.Message) ([]byte, error)
 
 	for _, msg := range messages {
 		md := messageData{
-			Key:      msg.Key,
-			Template: msg.Template,
-			FuncName: naming.KeyToFunctionName(msg.Key),
-			HasArgs:  len(msg.Placeholders) > 0,
+			Key:         msg.Key,
+			Template:    msg.Template,
+			FuncName:    naming.KeyToFunctionName(msg.Key),
+			HasArgs:     len(msg.Placeholders) > 0,
+			IsPlural:    msg.IsPlural(),
+			PluralForms: msg.Plural,
 		}
 
 		if len(msg.Placeholders) > 0 {
@@ -90,6 +95,9 @@ func generateCode(packageName string, messages []parser.Message) ([]byte, error)
 					Name:      p.Name,
 					ParamName: p.Name,
 				})
+				if md.IsPlural && md.PluralCountParam == "" && p.Type == parser.TypeInt {
+					md.PluralCountParam = p.Name
+				}
 			}
 		}
 

@@ -9,9 +9,25 @@ import "github.com/mickamy/go-typesafe-i18n"
 
 {{range .Messages}}
 // {{.FuncName}} returns a Message for "{{.Key}}".
+{{- if .IsPlural}}
+// Plural forms: {{range $k, $v := .PluralForms}}{{$k}}={{$v}} {{end}}
+{{- else}}
 // Template: {{.Template}}
+{{- end}}
 func {{.FuncName}}({{.ParamList}}) i18n.Message {
+{{- if .IsPlural}}
+	return i18n.Message{
+		ID: "{{.Key}}",
 {{- if .HasArgs}}
+		Args: map[string]any{
+{{- range .Placeholders}}
+			"{{.Name}}": {{.ParamName}},
+{{- end}}
+		},
+{{- end}}
+		PluralCount: &{{.PluralCountParam}},
+	}
+{{- else if .HasArgs}}
 	return i18n.Message{
 		ID: "{{.Key}}",
 		Args: map[string]any{
