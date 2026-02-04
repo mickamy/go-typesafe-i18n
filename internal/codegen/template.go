@@ -10,7 +10,9 @@ import "github.com/mickamy/go-typesafe-i18n"
 {{range .Messages}}
 // {{.FuncName}} returns a Message for "{{.Key}}".
 {{- if .IsPlural}}
-// Plural forms: {{range $k, $v := .PluralForms}}{{$k}}={{$v}} {{end}}
+{{- range $k, $v := .PluralForms}}
+// {{$k}}: {{$v}}
+{{- end}}
 {{- else}}
 // Template: {{.Template}}
 {{- end}}
