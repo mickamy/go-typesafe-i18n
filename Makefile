@@ -2,7 +2,7 @@ APP_NAME = go-typesafe-i18n
 BUILD_DIR = bin
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 LDFLAGS = -ldflags "-X cmd/main.version=$(VERSION)"
-CMD_DIR = ./cmd
+CMD_DIR = ./cmd/go-typesafe-i18n
 
 .PHONY: all build install uninstall clean test lint
 
