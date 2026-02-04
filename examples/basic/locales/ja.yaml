@@ -1,0 +1,7 @@
+greeting: "こんにちは"
+hello: "こんにちは、{name}さん！"
+items_count: "{count:int}件のアイテム"
+total_price: "合計: ¥{price:float}"
+user:
+  not_found: "ユーザーが見つかりません"
+  deleted: "ユーザー {name} を削除しました"
