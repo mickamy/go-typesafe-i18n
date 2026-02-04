@@ -29,8 +29,5 @@ func (p *TOMLParser) ParseMessages(data []byte) ([]Message, error) {
 		return nil, fmt.Errorf("failed to parse TOML: %w", err)
 	}
 
-	flat := make(map[string]string)
-	flatten("", raw, flat)
-
-	return buildMessages(flat), nil
+	return buildMessages("", raw)
 }

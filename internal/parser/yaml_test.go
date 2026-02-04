@@ -251,3 +251,61 @@ user:
 		})
 	}
 }
+
+func TestYAMLParser_ParseMessages_Plural(t *testing.T) {
+	t.Parallel()
+
+	input := `
+items_count:
+  one: "You have 1 item"
+  other: "You have {count:int} items"
+greeting: "Hello"
+`
+
+	p := &parser.YAMLParser{}
+	messages, err := p.ParseMessages([]byte(input))
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(messages) != 2 {
+		t.Fatalf("expected 2 messages, got %d", len(messages))
+	}
+
+	// Build map for order-independent lookup
+	byKey := make(map[string]parser.Message)
+	for _, m := range messages {
+		byKey[m.Key] = m
+	}
+
+	greeting, ok := byKey["greeting"]
+	if !ok {
+		t.Fatal("missing key 'greeting'")
+	}
+	if greeting.IsPlural() {
+		t.Error("greeting should not be plural")
+	}
+
+	items, ok := byKey["items_count"]
+	if !ok {
+		t.Fatal("missing key 'items_count'")
+	}
+	if !items.IsPlural() {
+		t.Error("items_count should be plural")
+	}
+	if items.Plural["one"] != "You have 1 item" {
+		t.Errorf("expected one form, got %q", items.Plural["one"])
+	}
+	if items.Plural["other"] != "You have {count:int} items" {
+		t.Errorf("expected other form, got %q", items.Plural["other"])
+	}
+	if len(items.Placeholders) != 1 {
+		t.Errorf("expected 1 placeholder, got %d", len(items.Placeholders))
+	}
+	if items.Placeholders[0].Name != "count" {
+		t.Errorf("expected placeholder 'count', got %q", items.Placeholders[0].Name)
+	}
+	if items.Placeholders[0].Type != parser.TypeInt {
+		t.Errorf("expected type int, got %v", items.Placeholders[0].Type)
+	}
+}

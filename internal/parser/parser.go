@@ -17,9 +17,25 @@ type Result struct {
 // Message represents a parsed message with placeholder information.
 // Used by the code generator to produce typed functions.
 type Message struct {
-	Key          string        // dot-separated key (e.g., "user.not_found")
-	Template     string        // original template string
-	Placeholders []Placeholder // placeholders in order of appearance
+	Key          string            // dot-separated key (e.g., "user.not_found")
+	Template     string            // original template string (empty if plural)
+	Placeholders []Placeholder     // placeholders in order of appearance
+	Plural       map[string]string // plural forms: "one" -> template, "other" -> template
+}
+
+// IsPlural returns true if the message has plural forms.
+func (m Message) IsPlural() bool {
+	return len(m.Plural) > 0
+}
+
+// pluralForms are the valid CLDR plural category keys.
+var pluralForms = map[string]struct{}{
+	"zero":  {},
+	"one":   {},
+	"two":   {},
+	"few":   {},
+	"many":  {},
+	"other": {},
 }
 
 // Placeholder represents a placeholder in a message template.
@@ -74,7 +90,14 @@ func ParseMessagesFile(path string, data []byte) ([]Message, error) {
 	if err != nil {
 		return nil, err
 	}
-	return p.ParseMessages(data)
+	messages, err := p.ParseMessages(data)
+	if err != nil {
+		return nil, err
+	}
+	sort.Slice(messages, func(i, j int) bool {
+		return messages[i].Key < messages[j].Key
+	})
+	return messages, nil
 }
 
 // parserForExtension returns the appropriate parser for the given file extension.
@@ -98,15 +121,15 @@ var placeholderRegex = regexp.MustCompile(`\{(\w+)(?::(\w+))?\}`)
 // Placeholders are returned in order of appearance.
 func extractPlaceholders(template string) []Placeholder {
 	matches := placeholderRegex.FindAllStringSubmatch(template, -1)
-	seen := make(map[string]bool)
+	seen := make(map[string]struct{})
 	var placeholders []Placeholder
 
 	for _, match := range matches {
 		name := match[1]
-		if seen[name] {
+		if _, ok := seen[name]; ok {
 			continue
 		}
-		seen[name] = true
+		seen[name] = struct{}{}
 
 		typ := TypeString
 		if len(match) > 2 && match[2] != "" {
@@ -134,20 +157,72 @@ func parseType(hint string) PlaceholderType {
 	}
 }
 
-// buildMessages converts a flat map to a sorted slice of Messages.
-func buildMessages(flat map[string]string) []Message {
+// buildMessages processes raw parsed data and detects plural forms.
+func buildMessages(prefix string, raw map[string]any) ([]Message, error) {
 	var messages []Message
-	for key, template := range flat {
-		messages = append(messages, Message{
-			Key:          key,
-			Template:     template,
-			Placeholders: extractPlaceholders(template),
-		})
+
+	for k, v := range raw {
+		key := k
+		if prefix != "" {
+			key = prefix + "." + k
+		}
+
+		switch val := v.(type) {
+		case string:
+			messages = append(messages, Message{
+				Key:          key,
+				Template:     val,
+				Placeholders: extractPlaceholders(val),
+			})
+		case map[string]any:
+			if isPluralMap(val) {
+				plural := make(map[string]string)
+				var placeholders []Placeholder
+				seen := make(map[string]struct{})
+
+				for form, tmpl := range val {
+					s, ok := tmpl.(string)
+					if !ok {
+						return nil, fmt.Errorf("invalid plural form value for key %q form %q: expected string", key, form)
+					}
+					plural[form] = s
+					for _, p := range extractPlaceholders(s) {
+						if _, ok := seen[p.Name]; !ok {
+							seen[p.Name] = struct{}{}
+							placeholders = append(placeholders, p)
+						}
+					}
+				}
+
+				messages = append(messages, Message{
+					Key:          key,
+					Plural:       plural,
+					Placeholders: placeholders,
+				})
+			} else {
+				nested, err := buildMessages(key, val)
+				if err != nil {
+					return nil, err
+				}
+				messages = append(messages, nested...)
+			}
+		}
 	}
+	return messages, nil
+}
 
-	sort.Slice(messages, func(i, j int) bool {
-		return messages[i].Key < messages[j].Key
-	})
-
-	return messages
+// isPluralMap checks if all keys in the map are valid plural forms.
+func isPluralMap(m map[string]any) bool {
+	if len(m) == 0 {
+		return false
+	}
+	for k, v := range m {
+		if _, ok := pluralForms[k]; !ok {
+			return false
+		}
+		if _, ok := v.(string); !ok {
+			return false
+		}
+	}
+	return true
 }
