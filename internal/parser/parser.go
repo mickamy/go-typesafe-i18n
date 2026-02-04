@@ -3,6 +3,8 @@ package parser
 import (
 	"fmt"
 	"path/filepath"
+	"regexp"
+	"sort"
 	"strings"
 )
 
@@ -80,7 +82,72 @@ func parserForExtension(ext string) (Parser, error) {
 	switch strings.ToLower(ext) {
 	case ".yaml", ".yml":
 		return &YAMLParser{}, nil
+	case ".json":
+		return &JSONParser{}, nil
+	case ".toml":
+		return &TOMLParser{}, nil
 	default:
 		return nil, fmt.Errorf("unsupported file extension: %s", ext)
 	}
+}
+
+// placeholderRegex matches placeholders like {name} or {count:int}.
+var placeholderRegex = regexp.MustCompile(`\{(\w+)(?::(\w+))?\}`)
+
+// extractPlaceholders extracts placeholders from a template string.
+// Placeholders are returned in order of appearance.
+func extractPlaceholders(template string) []Placeholder {
+	matches := placeholderRegex.FindAllStringSubmatch(template, -1)
+	seen := make(map[string]bool)
+	var placeholders []Placeholder
+
+	for _, match := range matches {
+		name := match[1]
+		if seen[name] {
+			continue
+		}
+		seen[name] = true
+
+		typ := TypeString
+		if len(match) > 2 && match[2] != "" {
+			typ = parseType(match[2])
+		}
+
+		placeholders = append(placeholders, Placeholder{
+			Name: name,
+			Type: typ,
+		})
+	}
+
+	return placeholders
+}
+
+// parseType converts a type hint string to PlaceholderType.
+func parseType(hint string) PlaceholderType {
+	switch hint {
+	case "int":
+		return TypeInt
+	case "float":
+		return TypeFloat64
+	default:
+		return TypeString
+	}
+}
+
+// buildMessages converts a flat map to a sorted slice of Messages.
+func buildMessages(flat map[string]string) []Message {
+	var messages []Message
+	for key, template := range flat {
+		messages = append(messages, Message{
+			Key:          key,
+			Template:     template,
+			Placeholders: extractPlaceholders(template),
+		})
+	}
+
+	sort.Slice(messages, func(i, j int) bool {
+		return messages[i].Key < messages[j].Key
+	})
+
+	return messages
 }

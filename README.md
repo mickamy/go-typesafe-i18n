@@ -1,10 +1,11 @@
 # go-typesafe-i18n
 
-Type-safe internationalization library for Go. Generate type-safe functions from YAML locale files.
+Type-safe internationalization library for Go. Generate type-safe functions from locale files.
 
 ## Features
 
-- Type-safe message functions generated from YAML
+- Supports YAML, JSON, and TOML formats
+- Type-safe message functions generated at build time
 - Typed placeholders: `{name}` (string), `{count:int}` (int), `{price:float}` (float64)
 - Language fallback using BCP 47 tags
 - Escape support: `\{name\}` renders as literal `{name}`
@@ -98,7 +99,7 @@ func main() {
 ## CLI Options
 
 ```
-Usage: go-typesafe-i18n [options] <yaml-file>
+Usage: go-typesafe-i18n [options] <locale-file>
 
 Options:
   -pkg string

@@ -165,7 +165,7 @@ func TestGenerate_UnsupportedExtension(t *testing.T) {
 	t.Parallel()
 
 	tmpDir := t.TempDir()
-	inputPath := filepath.Join(tmpDir, "en.toml")
+	inputPath := filepath.Join(tmpDir, "en.txt")
 	outputPath := filepath.Join(tmpDir, "messages.go")
 
 	if err := os.WriteFile(inputPath, []byte(`greeting = "Hello"`), 0o644); err != nil {

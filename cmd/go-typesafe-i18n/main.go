@@ -25,7 +25,7 @@ func run() error {
 	)
 
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: go-typesafe-i18n [options] <yaml-file>\n\n")
+		fmt.Fprintf(os.Stderr, "Usage: go-typesafe-i18n [options] <locale-file>\n\n")
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		flag.PrintDefaults()
 	}
