@@ -1,4 +1,4 @@
-package i18n
+package i18n_test
 
 import (
 	"os"
@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"golang.org/x/text/language"
+
+	"github.com/mickamy/go-typesafe-i18n"
 )
 
 func TestLocalizer_Localize(t *testing.T) {
@@ -16,17 +18,17 @@ func TestLocalizer_Localize(t *testing.T) {
 
 	tests := []struct {
 		name     string
-		msg      Message
+		msg      i18n.Message
 		expected string
 	}{
 		{
 			name:     "simple message",
-			msg:      Message{ID: "greeting"},
+			msg:      i18n.Message{ID: "greeting"},
 			expected: "Hello",
 		},
 		{
 			name: "message with string arg",
-			msg: Message{
+			msg: i18n.Message{
 				ID:   "hello",
 				Args: map[string]any{"name": "John"},
 			},
@@ -34,7 +36,7 @@ func TestLocalizer_Localize(t *testing.T) {
 		},
 		{
 			name: "message with int arg",
-			msg: Message{
+			msg: i18n.Message{
 				ID:   "items_count",
 				Args: map[string]any{"count": 5},
 			},
@@ -42,7 +44,7 @@ func TestLocalizer_Localize(t *testing.T) {
 		},
 		{
 			name: "message with float arg",
-			msg: Message{
+			msg: i18n.Message{
 				ID:   "total_price",
 				Args: map[string]any{"price": 1234.56},
 			},
@@ -50,7 +52,7 @@ func TestLocalizer_Localize(t *testing.T) {
 		},
 		{
 			name: "message with multiple args",
-			msg: Message{
+			msg: i18n.Message{
 				ID:   "transfer",
 				Args: map[string]any{"from": "Alice", "to": "Bob", "amount": 1000},
 			},
@@ -83,23 +85,23 @@ mixed: "Hello \\{literal\\} and {name}"
 		t.Fatalf("failed to write test file: %v", err)
 	}
 
-	bundle := NewBundle(language.English)
+	bundle := i18n.NewBundle(language.English)
 	bundle.MustLoadFile(path)
 	loc := bundle.Localizer(language.English)
 
 	tests := []struct {
 		name     string
-		msg      Message
+		msg      i18n.Message
 		expected string
 	}{
 		{
 			name:     "escaped braces",
-			msg:      Message{ID: "escaped"},
+			msg:      i18n.Message{ID: "escaped"},
 			expected: "Use {name} for placeholders",
 		},
 		{
 			name: "mixed escaped and placeholder",
-			msg: Message{
+			msg: i18n.Message{
 				ID:   "mixed",
 				Args: map[string]any{"name": "World"},
 			},
@@ -136,25 +138,25 @@ english_only: "English only"
 
 	// Japanese has only common key
 	jaPath := filepath.Join(tmpDir, "ja.yaml")
-	jaContent := `common: "共通メッセージ"`
+	jaContent := `common: "Common in Japanese"`
 	if err := os.WriteFile(jaPath, []byte(jaContent), 0o644); err != nil {
 		t.Fatalf("failed to write test file: %v", err)
 	}
 
-	bundle := NewBundle(language.English)
+	bundle := i18n.NewBundle(language.English)
 	bundle.MustLoadFile(enPath)
 	bundle.MustLoadFile(jaPath)
 
 	loc := bundle.Localizer(language.Japanese)
 
 	// Should get Japanese message
-	got := loc.Localize(Message{ID: "common"})
-	if got != "共通メッセージ" {
+	got := loc.Localize(i18n.Message{ID: "common"})
+	if got != "Common in Japanese" {
 		t.Errorf("expected Japanese message, got %q", got)
 	}
 
 	// Should fallback to English
-	got = loc.Localize(Message{ID: "english_only"})
+	got = loc.Localize(i18n.Message{ID: "english_only"})
 	if got != "English only" {
 		t.Errorf("expected English fallback, got %q", got)
 	}
@@ -172,10 +174,10 @@ func TestLocalizer_Localize_Panics(t *testing.T) {
 		}
 	}()
 
-	loc.Localize(Message{ID: "nonexistent"})
+	loc.Localize(i18n.Message{ID: "nonexistent"})
 }
 
-func setupTestBundle(t *testing.T) *Bundle {
+func setupTestBundle(t *testing.T) *i18n.Bundle {
 	t.Helper()
 
 	tmpDir := t.TempDir()
@@ -191,7 +193,7 @@ transfer: "Transfer {amount:int} from {from} to {to}"
 		t.Fatalf("failed to write test file: %v", err)
 	}
 
-	bundle := NewBundle(language.English)
+	bundle := i18n.NewBundle(language.English)
 	bundle.MustLoadFile(path)
 	return bundle
 }

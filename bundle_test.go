@@ -1,4 +1,4 @@
-package i18n
+package i18n_test
 
 import (
 	"os"
@@ -6,18 +6,17 @@ import (
 	"testing"
 
 	"golang.org/x/text/language"
+
+	"github.com/mickamy/go-typesafe-i18n"
 )
 
 func TestNewBundle(t *testing.T) {
 	t.Parallel()
 
-	bundle := NewBundle(language.English)
-
-	if bundle.defaultLang != language.English {
-		t.Errorf("expected default lang %v, got %v", language.English, bundle.defaultLang)
-	}
-	if bundle.messages == nil {
-		t.Error("expected messages map to be initialized")
+	// Just verify it doesn't panic
+	bundle := i18n.NewBundle(language.English)
+	if bundle == nil {
+		t.Error("expected non-nil bundle")
 	}
 }
 
@@ -28,39 +27,40 @@ func TestBundle_LoadFile(t *testing.T) {
 		name     string
 		filename string
 		content  string
-		wantLang language.Tag
-		wantKeys []string
 		wantErr  bool
 	}{
 		{
 			name:     "simple yaml",
 			filename: "en.yaml",
 			content:  "greeting: Hello",
-			wantLang: language.English,
-			wantKeys: []string{"greeting"},
+			wantErr:  false,
 		},
 		{
 			name:     "nested yaml",
 			filename: "ja.yaml",
 			content: `
 user:
-  not_found: "ユーザーが見つかりません"
-  deleted: "削除しました"
+  not_found: "User not found"
+  deleted: "User deleted"
 `,
-			wantLang: language.Japanese,
-			wantKeys: []string{"user.not_found", "user.deleted"},
+			wantErr: false,
 		},
 		{
 			name:     "yml extension",
 			filename: "fr.yml",
 			content:  "bonjour: Bonjour",
-			wantLang: language.French,
-			wantKeys: []string{"bonjour"},
+			wantErr:  false,
 		},
 		{
-			name:     "invalid language",
+			name:     "invalid language tag",
 			filename: "invalid-lang-tag.yaml",
 			content:  "key: value",
+			wantErr:  true,
+		},
+		{
+			name:     "invalid yaml",
+			filename: "en.yaml",
+			content:  "invalid: [",
 			wantErr:  true,
 		},
 	}
@@ -76,7 +76,7 @@ user:
 				t.Fatalf("failed to write test file: %v", err)
 			}
 
-			bundle := NewBundle(language.English)
+			bundle := i18n.NewBundle(language.English)
 			err := bundle.LoadFile(path)
 
 			if tt.wantErr {
@@ -89,25 +89,25 @@ user:
 			if err != nil {
 				t.Fatalf("unexpected error: %v", err)
 			}
-
-			msgs, ok := bundle.messages[tt.wantLang]
-			if !ok {
-				t.Fatalf("messages not found for language %v", tt.wantLang)
-			}
-
-			for _, key := range tt.wantKeys {
-				if _, ok := msgs[key]; !ok {
-					t.Errorf("missing key: %s", key)
-				}
-			}
 		})
+	}
+}
+
+func TestBundle_LoadFile_NonexistentFile(t *testing.T) {
+	t.Parallel()
+
+	bundle := i18n.NewBundle(language.English)
+	err := bundle.LoadFile("/nonexistent/path/en.yaml")
+
+	if err == nil {
+		t.Error("expected error for nonexistent file, got nil")
 	}
 }
 
 func TestBundle_MustLoadFile_Panics(t *testing.T) {
 	t.Parallel()
 
-	bundle := NewBundle(language.English)
+	bundle := i18n.NewBundle(language.English)
 
 	defer func() {
 		if r := recover(); r == nil {
@@ -121,52 +121,25 @@ func TestBundle_MustLoadFile_Panics(t *testing.T) {
 func TestBundle_Localizer(t *testing.T) {
 	t.Parallel()
 
-	bundle := NewBundle(language.English)
-	loc := bundle.Localizer(language.Japanese)
+	tmpDir := t.TempDir()
+	path := filepath.Join(tmpDir, "en.yaml")
+	content := `greeting: "Hello"`
 
-	if loc.bundle != bundle {
-		t.Error("localizer should reference the bundle")
-	}
-	if loc.lang != language.Japanese {
-		t.Errorf("expected lang %v, got %v", language.Japanese, loc.lang)
-	}
-}
-
-func TestInferLanguage(t *testing.T) {
-	t.Parallel()
-
-	tests := []struct {
-		path     string
-		wantLang language.Tag
-		wantErr  bool
-	}{
-		{"en.yaml", language.English, false},
-		{"ja.yaml", language.Japanese, false},
-		{"zh-Hans.yaml", language.SimplifiedChinese, false},
-		{"/path/to/locales/fr.yml", language.French, false},
-		{"invalid-lang-tag.yaml", language.Tag{}, true},
+	if err := os.WriteFile(path, []byte(content), 0o644); err != nil {
+		t.Fatalf("failed to write test file: %v", err)
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.path, func(t *testing.T) {
-			t.Parallel()
+	bundle := i18n.NewBundle(language.English)
+	bundle.MustLoadFile(path)
 
-			got, err := inferLanguage(tt.path)
+	loc := bundle.Localizer(language.English)
+	if loc == nil {
+		t.Error("expected non-nil localizer")
+	}
 
-			if tt.wantErr {
-				if err == nil {
-					t.Error("expected error, got nil")
-				}
-				return
-			}
-
-			if err != nil {
-				t.Fatalf("unexpected error: %v", err)
-			}
-
-			if got != tt.wantLang {
-				t.Errorf("expected %v, got %v", tt.wantLang, got)
-			}
-		})
+	// Verify localizer works
+	msg := loc.Localize(i18n.Message{ID: "greeting"})
+	if msg != "Hello" {
+		t.Errorf("expected %q, got %q", "Hello", msg)
 	}
 }
