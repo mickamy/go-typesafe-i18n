@@ -14,7 +14,8 @@ import (
 // Bundle manages messages for multiple languages.
 type Bundle struct {
 	defaultLang language.Tag
-	messages    map[language.Tag]map[string]string // lang -> id -> template
+	messages    map[language.Tag]map[string]string            // lang -> id -> template
+	plurals     map[language.Tag]map[string]map[string]string // lang -> id -> form -> template
 	matcher     language.Matcher
 }
 
@@ -23,6 +24,7 @@ func NewBundle(defaultLang language.Tag) *Bundle {
 	return &Bundle{
 		defaultLang: defaultLang,
 		messages:    make(map[language.Tag]map[string]string),
+		plurals:     make(map[language.Tag]map[string]map[string]string),
 	}
 }
 
@@ -54,6 +56,7 @@ func (b *Bundle) LoadFile(path string) error {
 	}
 
 	b.messages[lang] = result.Messages
+	b.plurals[lang] = result.Plurals
 	b.rebuildMatcher()
 	return nil
 }

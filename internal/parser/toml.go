@@ -9,7 +9,7 @@ import (
 // TOMLParser parses TOML locale files.
 type TOMLParser struct{}
 
-// Parse parses TOML data and returns a flat map of messages.
+// Parse parses TOML data and returns messages and plurals.
 func (p *TOMLParser) Parse(data []byte) (*Result, error) {
 	var raw map[string]any
 	if err := toml.Unmarshal(data, &raw); err != nil {
@@ -17,9 +17,10 @@ func (p *TOMLParser) Parse(data []byte) (*Result, error) {
 	}
 
 	messages := make(map[string]string)
-	flatten("", raw, messages)
+	plurals := make(map[string]map[string]string)
+	flatten("", raw, messages, plurals)
 
-	return &Result{Messages: messages}, nil
+	return &Result{Messages: messages, Plurals: plurals}, nil
 }
 
 // ParseMessages parses TOML data and returns messages with placeholder information.

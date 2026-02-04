@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"golang.org/x/text/feature/plural"
 	"golang.org/x/text/language"
 )
 
@@ -24,7 +25,12 @@ const (
 // If the message is not found in any language, it panics.
 // Escaped braces (\{ and \}) are converted to literal { and }.
 func (l *Localizer) Localize(msg Message) string {
-	tmpl := l.getTemplate(msg.ID)
+	var tmpl string
+	if msg.PluralCount != nil {
+		tmpl = l.getPluralTemplate(msg.ID, *msg.PluralCount)
+	} else {
+		tmpl = l.getTemplate(msg.ID)
+	}
 
 	// Temporarily replace escaped braces
 	result := strings.ReplaceAll(tmpl, `\{`, escapedOpenBrace)
@@ -70,4 +76,66 @@ func (l *Localizer) getTemplate(id string) string {
 	}
 
 	panic(fmt.Sprintf("go-typesafe-i18n: message not found: %s", id))
+}
+
+// getPluralTemplate retrieves the plural template for the given message ID and count.
+// It selects the appropriate plural form based on CLDR rules for the language.
+func (l *Localizer) getPluralTemplate(id string, count int) string {
+	form := l.selectPluralForm(count)
+
+	// Use matcher to find best matching language
+	if l.bundle.matcher != nil {
+		matched, _, _ := l.bundle.matcher.Match(l.lang)
+		if plurals, ok := l.bundle.plurals[matched]; ok {
+			if forms, ok := plurals[id]; ok {
+				if tmpl, ok := forms[form]; ok {
+					return tmpl
+				}
+				// Fallback to "other" form
+				if tmpl, ok := forms["other"]; ok {
+					return tmpl
+				}
+			}
+		}
+	}
+
+	// Fallback to default language
+	if plurals, ok := l.bundle.plurals[l.bundle.defaultLang]; ok {
+		if forms, ok := plurals[id]; ok {
+			if tmpl, ok := forms[form]; ok {
+				return tmpl
+			}
+			// Fallback to "other" form
+			if tmpl, ok := forms["other"]; ok {
+				return tmpl
+			}
+		}
+	}
+
+	panic(fmt.Sprintf("go-typesafe-i18n: plural message not found: %s", id))
+}
+
+// selectPluralForm returns the CLDR plural form for the given count.
+func (l *Localizer) selectPluralForm(count int) string {
+	// Use matcher to find best matching language for plural rules
+	lang := l.lang
+	if l.bundle.matcher != nil {
+		lang, _, _ = l.bundle.matcher.Match(l.lang)
+	}
+
+	form := plural.Cardinal.MatchPlural(lang, count, 0, 0, 0, 0)
+	switch form {
+	case plural.Zero:
+		return "zero"
+	case plural.One:
+		return "one"
+	case plural.Two:
+		return "two"
+	case plural.Few:
+		return "few"
+	case plural.Many:
+		return "many"
+	default:
+		return "other"
+	}
 }

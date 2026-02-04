@@ -1,7 +1,7 @@
 package parser
 
-// flatten converts a nested map into a flat map with dot-separated keys.
-func flatten(prefix string, m map[string]any, result map[string]string) {
+// flatten converts a nested map into Result with messages and plurals.
+func flatten(prefix string, m map[string]any, messages map[string]string, plurals map[string]map[string]string) {
 	for k, v := range m {
 		key := k
 		if prefix != "" {
@@ -10,9 +10,17 @@ func flatten(prefix string, m map[string]any, result map[string]string) {
 
 		switch val := v.(type) {
 		case string:
-			result[key] = val
+			messages[key] = val
 		case map[string]any:
-			flatten(key, val, result)
+			if isPluralMap(val) {
+				plural := make(map[string]string)
+				for form, tmpl := range val {
+					plural[form] = tmpl.(string)
+				}
+				plurals[key] = plural
+			} else {
+				flatten(key, val, messages, plurals)
+			}
 		}
 	}
 }

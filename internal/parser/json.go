@@ -8,7 +8,7 @@ import (
 // JSONParser parses JSON locale files.
 type JSONParser struct{}
 
-// Parse parses JSON data and returns a flat map of messages.
+// Parse parses JSON data and returns messages and plurals.
 func (p *JSONParser) Parse(data []byte) (*Result, error) {
 	var raw map[string]any
 	if err := json.Unmarshal(data, &raw); err != nil {
@@ -16,9 +16,10 @@ func (p *JSONParser) Parse(data []byte) (*Result, error) {
 	}
 
 	messages := make(map[string]string)
-	flatten("", raw, messages)
+	plurals := make(map[string]map[string]string)
+	flatten("", raw, messages, plurals)
 
-	return &Result{Messages: messages}, nil
+	return &Result{Messages: messages, Plurals: plurals}, nil
 }
 
 // ParseMessages parses JSON data and returns messages with placeholder information.

@@ -9,7 +9,7 @@ import (
 // YAMLParser parses YAML locale files.
 type YAMLParser struct{}
 
-// Parse parses YAML data and returns a flat map of messages.
+// Parse parses YAML data and returns messages and plurals.
 func (p *YAMLParser) Parse(data []byte) (*Result, error) {
 	var raw map[string]any
 	if err := yaml.Unmarshal(data, &raw); err != nil {
@@ -17,9 +17,10 @@ func (p *YAMLParser) Parse(data []byte) (*Result, error) {
 	}
 
 	messages := make(map[string]string)
-	flatten("", raw, messages)
+	plurals := make(map[string]map[string]string)
+	flatten("", raw, messages, plurals)
 
-	return &Result{Messages: messages}, nil
+	return &Result{Messages: messages, Plurals: plurals}, nil
 }
 
 // ParseMessages parses YAML data and returns messages with placeholder information.

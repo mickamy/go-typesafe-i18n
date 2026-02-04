@@ -8,10 +8,11 @@ import (
 	"strings"
 )
 
-// Result contains the parsed messages as a flat map.
+// Result contains the parsed messages.
 // Used by the runtime Bundle for message lookup.
 type Result struct {
-	Messages map[string]string // key -> template (flattened)
+	Messages map[string]string            // key -> template (non-plural)
+	Plurals  map[string]map[string]string // key -> form -> template (plural)
 }
 
 // Message represents a parsed message with placeholder information.
