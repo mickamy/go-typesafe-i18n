@@ -16,10 +16,7 @@ func (p *TOMLParser) Parse(data []byte) (*Result, error) {
 		return nil, fmt.Errorf("failed to parse TOML: %w", err)
 	}
 
-	messages := make(map[string]string)
-	plurals := make(map[string]map[string]string)
-	flatten("", raw, messages, plurals)
-
+	messages, plurals := flatten("", raw)
 	return &Result{Messages: messages, Plurals: plurals}, nil
 }
 
