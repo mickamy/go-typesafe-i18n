@@ -7,6 +7,7 @@ Type-safe internationalization library for Go. Generate type-safe functions from
 - Supports YAML, JSON, and TOML formats
 - Type-safe message functions generated at build time
 - Typed placeholders: `{name}` (string), `{count:int}` (int), `{price:float}` (float64)
+- Plural support using CLDR rules
 - Language fallback using BCP 47 tags
 - Escape support: `\{name\}` renders as literal `{name}`
 - Collision detection at generation time
@@ -31,7 +32,7 @@ Or as a project-local tool (Go 1.24+):
 
 ```bash
 go get -tool github.com/mickamy/go-typesafe-i18n/cmd/go-typesafe-i18n@latest
-go tool go-typesafe-i18n -pkg=messages -out=messages/messages_gen.go locales/en.yaml
+go tool go-typesafe-i18n generate -pkg=messages -out=messages/messages_gen.go locales/en.yaml
 ```
 
 ## Quick Start
@@ -63,7 +64,7 @@ user:
 ### 2. Generate code
 
 ```bash
-go-typesafe-i18n -pkg=messages -out=messages/messages_gen.go locales/en.yaml
+go-typesafe-i18n generate -pkg=messages -out=messages/messages_gen.go locales/en.yaml
 ```
 
 ### 3. Use in your code
@@ -96,18 +97,49 @@ func main() {
 }
 ```
 
-## CLI Options
+## CLI
 
 ```
-Usage: go-typesafe-i18n [options] <locale-file>
+Usage: go-typesafe-i18n <command> [options]
+
+Commands:
+  generate    Generate type-safe message functions from a locale file
+  lint        Check key consistency across locale files
+```
+
+### generate
+
+```
+Usage: go-typesafe-i18n generate [options] <locale-file>
 
 Options:
   -pkg string
         package name for generated code (default "messages")
   -out string
         output file path (default "messages_gen.go")
-  -version
-        show version
+```
+
+### lint
+
+Check that all locale files have the same keys as the base locale.
+
+```
+Usage: go-typesafe-i18n lint -base=<locale> <directory>
+       go-typesafe-i18n lint -base=<file> <target-files...>
+
+Options:
+  -base string
+        base locale name or file path (required)
+```
+
+Examples:
+
+```bash
+# Check all files in a directory against "en" locale
+go-typesafe-i18n lint -base=en locales/
+
+# Check specific files
+go-typesafe-i18n lint -base=locales/en.yaml locales/ja.yaml locales/fr.yaml
 ```
 
 ## Placeholder Types
@@ -117,6 +149,38 @@ Options:
 | `{name}`        | `string`  | `"Hello, {name}!"`    |
 | `{count:int}`   | `int`     | `"{count:int} items"` |
 | `{price:float}` | `float64` | `"${price:float}"`    |
+
+## Plural Support
+
+Define plural forms using CLDR categories (`zero`, `one`, `two`, `few`, `many`, `other`):
+
+```yaml
+# locales/en.yaml
+items_count:
+  one: "You have 1 item"
+  other: "You have {count:int} items"
+```
+
+```yaml
+# locales/ja.yaml
+items_count:
+  one: "1件のアイテム"
+  other: "{count:int}件のアイテム"
+```
+
+The generated function takes the count parameter and automatically selects the correct plural form:
+
+```go
+en := bundle.Localizer(language.English)
+fmt.Println(en.Localize(messages.ItemsCount(1)))  // "You have 1 item"
+fmt.Println(en.Localize(messages.ItemsCount(5)))  // "You have 5 items"
+
+ja := bundle.Localizer(language.Japanese)
+fmt.Println(ja.Localize(messages.ItemsCount(1)))  // "1件のアイテム"
+fmt.Println(ja.Localize(messages.ItemsCount(5)))  // "5件のアイテム"
+```
+
+The first `int` typed placeholder is used to determine the plural form.
 
 ## Escaping
 
