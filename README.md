@@ -32,7 +32,7 @@ Or as a project-local tool (Go 1.24+):
 
 ```bash
 go get -tool github.com/mickamy/go-typesafe-i18n/cmd/go-typesafe-i18n@latest
-go tool go-typesafe-i18n generate -pkg=messages -out=messages/messages_gen.go locales/en.yaml
+go tool go-typesafe-i18n generate -base=en -pkg=messages -out=messages/messages_gen.go locales/
 ```
 
 ## Quick Start
@@ -64,7 +64,7 @@ user:
 ### 2. Generate code
 
 ```bash
-go-typesafe-i18n generate -pkg=messages -out=messages/messages_gen.go locales/en.yaml
+go-typesafe-i18n generate -base=en -pkg=messages -out=messages/messages_gen.go locales/
 ```
 
 ### 3. Use in your code
@@ -103,16 +103,18 @@ func main() {
 Usage: go-typesafe-i18n <command> [options]
 
 Commands:
-  generate    Generate type-safe message functions from a locale file
+  generate    Generate type-safe message functions from a locale directory
   lint        Check key consistency across locale files
 ```
 
 ### generate
 
 ```
-Usage: go-typesafe-i18n generate [options] <locale-file>
+Usage: go-typesafe-i18n generate -base=<locale> [options] <locale-dir>
 
 Options:
+  -base string
+        base locale name (required)
   -pkg string
         package name for generated code (default "messages")
   -out string

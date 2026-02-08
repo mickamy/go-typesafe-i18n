@@ -55,7 +55,7 @@ func printUsage() {
 	fmt.Fprintf(os.Stderr, `Usage: go-typesafe-i18n <command> [options]
 
 Commands:
-  generate    Generate type-safe message functions from a locale file
+  generate    Generate type-safe message functions from a locale directory
   lint        Check key consistency across locale files
 
 Run 'go-typesafe-i18n <command> -help' for more information on a command.
@@ -64,11 +64,12 @@ Run 'go-typesafe-i18n <command> -help' for more information on a command.
 
 func runGenerate(args []string) error {
 	fs := flag.NewFlagSet("generate", flag.ExitOnError)
+	base := fs.String("base", "", "base locale name (required)")
 	pkg := fs.String("pkg", "messages", "package name for generated code")
 	out := fs.String("out", "messages_gen.go", "output file path")
 
 	fs.Usage = func() {
-		fmt.Fprintf(os.Stderr, "Usage: go-typesafe-i18n generate [options] <locale-file>\n\n")
+		fmt.Fprintf(os.Stderr, "Usage: go-typesafe-i18n generate -base=<locale> [options] <locale-dir>\n\n")
 		fmt.Fprintf(os.Stderr, "Options:\n")
 		fs.PrintDefaults()
 	}
@@ -77,13 +78,23 @@ func runGenerate(args []string) error {
 		return err
 	}
 
+	if *base == "" {
+		fs.Usage()
+		return fmt.Errorf("-base flag is required")
+	}
+
 	if fs.NArg() != 1 {
 		fs.Usage()
-		return fmt.Errorf("expected exactly one input file")
+		return fmt.Errorf("expected exactly one locale directory")
+	}
+
+	localeFile, err := findLocaleFile(*base, fs.Arg(0))
+	if err != nil {
+		return err
 	}
 
 	cfg := codegen.Config{
-		InputPath:   fs.Arg(0),
+		InputPath:   localeFile,
 		OutputPath:  *out,
 		PackageName: *pkg,
 	}
@@ -94,6 +105,32 @@ func runGenerate(args []string) error {
 
 	fmt.Printf("Generated %s\n", *out)
 	return nil
+}
+
+func findLocaleFile(base, dir string) (string, error) {
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		return "", fmt.Errorf("failed to read directory %s: %w", dir, err)
+	}
+
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+
+		name := entry.Name()
+		ext := strings.ToLower(filepath.Ext(name))
+		if !supportedExtensions[ext] {
+			continue
+		}
+
+		nameWithoutExt := strings.TrimSuffix(name, ext)
+		if nameWithoutExt == base {
+			return filepath.Join(dir, name), nil
+		}
+	}
+
+	return "", fmt.Errorf("base locale %q not found in %s", base, dir)
 }
 
 func runLint(args []string) error {
