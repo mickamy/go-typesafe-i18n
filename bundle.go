@@ -40,17 +40,31 @@ func (b *Bundle) MustLoadFile(path string) {
 // The language is inferred from the filename (e.g., "ja.yaml" -> "ja").
 // Supported formats: YAML (.yaml, .yml)
 func (b *Bundle) LoadFile(path string) error {
-	lang, err := inferLanguage(path)
-	if err != nil {
-		return fmt.Errorf("failed to infer language from filename: %w", err)
-	}
-
 	data, err := os.ReadFile(path)
 	if err != nil {
 		return fmt.Errorf("failed to read file: %w", err)
 	}
 
-	result, err := parser.ParseFile(path, data)
+	return b.LoadBytes(filepath.Base(path), data)
+}
+
+// MustLoadBytes loads locale data from bytes and panics if an error occurs.
+// The filename is used to infer the language and format (e.g., "ja.yaml" -> "ja").
+func (b *Bundle) MustLoadBytes(filename string, data []byte) {
+	if err := b.LoadBytes(filename, data); err != nil {
+		panic(fmt.Sprintf("go-typesafe-i18n: failed to load bytes for %s: %v", filename, err))
+	}
+}
+
+// LoadBytes loads locale data from bytes into the bundle.
+// The filename is used to infer the language and format (e.g., "ja.yaml" -> "ja").
+func (b *Bundle) LoadBytes(filename string, data []byte) error {
+	lang, err := inferLanguage(filename)
+	if err != nil {
+		return fmt.Errorf("failed to infer language from filename: %w", err)
+	}
+
+	result, err := parser.ParseFile(filename, data)
 	if err != nil {
 		return fmt.Errorf("failed to parse file: %w", err)
 	}
