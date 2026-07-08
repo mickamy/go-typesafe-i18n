@@ -2,9 +2,7 @@ package i18n
 
 import (
 	"fmt"
-	"slices"
 	"strconv"
-	"strings"
 
 	"golang.org/x/text/feature/plural"
 	"golang.org/x/text/language"
@@ -25,27 +23,13 @@ type Localizer struct {
 // (e.g., en-US matches en), falling back to the default language when
 // nothing matches.
 func (b *Bundle) Localizer(tag language.Tag) Localizer {
-	if len(b.catalogs) == 0 {
+	if b.matcher == nil {
 		return Localizer{}
 	}
-	tags := make([]language.Tag, 0, len(b.catalogs))
-	_, hasDefault := b.catalogs[b.defaultTag]
-	if hasDefault {
-		tags = append(tags, b.defaultTag)
-	}
-	rest := make([]language.Tag, 0, len(b.catalogs))
-	for t := range b.catalogs {
-		if t != b.defaultTag {
-			rest = append(rest, t)
-		}
-	}
-	slices.SortFunc(rest, func(a, b language.Tag) int { return strings.Compare(a.String(), b.String()) })
-	tags = append(tags, rest...)
-
-	_, idx, _ := language.NewMatcher(tags).Match(tag)
-	matched := tags[idx]
+	_, idx, _ := b.matcher.Match(tag)
+	matched := b.tags[idx]
 	layers := []layer{b.layer(matched)}
-	if matched != b.defaultTag && hasDefault {
+	if _, hasDefault := b.catalogs[b.defaultTag]; hasDefault && matched != b.defaultTag {
 		layers = append(layers, b.layer(b.defaultTag))
 	}
 	return Localizer{layers: layers}

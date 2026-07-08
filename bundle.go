@@ -2,6 +2,8 @@ package i18n
 
 import (
 	"fmt"
+	"slices"
+	"strings"
 
 	"golang.org/x/text/language"
 
@@ -16,6 +18,8 @@ import (
 type Bundle struct {
 	defaultTag language.Tag
 	catalogs   map[language.Tag]locale.Catalog
+	tags       []language.Tag // default first, rest sorted; rebuilt on load
+	matcher    language.Matcher
 }
 
 // NewBundle creates a Bundle that falls back to defaultLang for messages
@@ -69,5 +73,27 @@ func (b *Bundle) add(c locale.Catalog) error {
 		return fmt.Errorf("i18n: locale %s already loaded", c.Tag)
 	}
 	b.catalogs[c.Tag] = c
+	b.rebuildMatcher()
 	return nil
+}
+
+// rebuildMatcher caches the matcher and its tag list so Localizer does not
+// pay for matcher construction on every call. The default language comes
+// first so that unmatched requests resolve to it; the rest are sorted for
+// determinism.
+func (b *Bundle) rebuildMatcher() {
+	tags := make([]language.Tag, 0, len(b.catalogs))
+	if _, ok := b.catalogs[b.defaultTag]; ok {
+		tags = append(tags, b.defaultTag)
+	}
+	rest := make([]language.Tag, 0, len(b.catalogs))
+	for t := range b.catalogs {
+		if t != b.defaultTag {
+			rest = append(rest, t)
+		}
+	}
+	slices.SortFunc(rest, func(a, b language.Tag) int { return strings.Compare(a.String(), b.String()) })
+	tags = append(tags, rest...)
+	b.tags = tags
+	b.matcher = language.NewMatcher(tags)
 }
