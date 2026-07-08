@@ -140,6 +140,18 @@ func TestLocalizer_Localize(t *testing.T) {
 			msg:  msg("items_count"),
 			want: "You have {count} items.",
 		},
+		{
+			name: "plural count as int64",
+			loc:  en,
+			msg:  msg("items_count", i18n.Arg{Name: "count", Value: int64(1)}),
+			want: "You have 1 item.",
+		},
+		{
+			name: "plural count as uint",
+			loc:  en,
+			msg:  msg("items_count", i18n.Arg{Name: "count", Value: uint(5)}),
+			want: "You have 5 items.",
+		},
 	}
 
 	for _, tt := range tests {

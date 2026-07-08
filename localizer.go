@@ -2,6 +2,7 @@ package i18n
 
 import (
 	"fmt"
+	"math"
 	"strconv"
 
 	"golang.org/x/text/feature/plural"
@@ -88,7 +89,7 @@ func (ly layer) render(entry locale.Entry, m Message) string {
 func (ly layer) pluralVariant(entry locale.Entry, m Message) template.Template {
 	form := "other"
 	if v, ok := lookupArg(m, locale.CountParam); ok {
-		if n, ok := v.(int); ok {
+		if n, ok := asInt(v); ok {
 			form = formName(pluralForm(ly.tag, n))
 		}
 	}
@@ -111,6 +112,47 @@ func (ly layer) format(v any) string {
 		return ly.printer.Sprint(number.Decimal(v))
 	default:
 		return fmt.Sprint(v)
+	}
+}
+
+// asInt converts any standard integer type to int for plural form matching.
+// Generated code always passes int; this keeps hand-built Messages working.
+func asInt(v any) (int, bool) {
+	switch n := v.(type) {
+	case int:
+		return n, true
+	case int8:
+		return int(n), true
+	case int16:
+		return int(n), true
+	case int32:
+		return int(n), true
+	case int64:
+		if n < math.MinInt || n > math.MaxInt {
+			return 0, false
+		}
+		return int(n), true
+	case uint:
+		if uint64(n) > math.MaxInt {
+			return 0, false
+		}
+		return int(n), true
+	case uint8:
+		return int(n), true
+	case uint16:
+		return int(n), true
+	case uint32:
+		if uint64(n) > math.MaxInt {
+			return 0, false
+		}
+		return int(n), true
+	case uint64:
+		if n > math.MaxInt {
+			return 0, false
+		}
+		return int(n), true
+	default:
+		return 0, false
 	}
 }
 
