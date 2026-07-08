@@ -1,6 +1,8 @@
 package i18n_test
 
 import (
+	"math"
+	"strconv"
 	"testing"
 
 	"golang.org/x/text/language"
@@ -189,6 +191,29 @@ func TestBundle_Localizer_matching(t *testing.T) {
 				t.Errorf("Localizer(%v).Localize(greeting) = %q, want %q", tt.tag, got, tt.want)
 			}
 		})
+	}
+}
+
+// The Russian tag is used only for its CLDR rules: modulo-based plural rules
+// panic inside x/text when given a negative operand, guarding the
+// math.MinInt negation overflow. English-like equality rules never hit it.
+func TestLocalizer_pluralMinIntCount(t *testing.T) {
+	t.Parallel()
+
+	src := `
+items:
+  one: "one:{count}"
+  few: "few:{count}"
+  many: "many:{count}"
+  other: "other:{count}"
+`
+	b := i18n.NewBundle(language.Russian)
+	if err := b.LoadYAML(language.Russian, []byte(src)); err != nil {
+		t.Fatal(err)
+	}
+	got := b.Localizer(language.Russian).Localize(msg("items", i18n.Arg{Name: "count", Value: math.MinInt}))
+	if want := "many:" + strconv.Itoa(math.MinInt); got != want {
+		t.Errorf("Localize(items) = %q, want %q", got, want)
 	}
 }
 

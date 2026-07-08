@@ -166,6 +166,9 @@ func lookupArg(m Message, name string) (any, bool) {
 }
 
 func pluralForm(tag language.Tag, n int) plural.Form {
+	if n == math.MinInt {
+		n++ // |math.MinInt| overflows int; the plural form is unaffected at this magnitude
+	}
 	if n < 0 {
 		n = -n
 	}
