@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"golang.org/x/text/language"
+	"golang.org/x/text/message"
 
 	"github.com/mickamy/go-typesafe-i18n/internal/locale"
 )
@@ -18,6 +19,7 @@ import (
 type Bundle struct {
 	defaultTag language.Tag
 	catalogs   map[language.Tag]locale.Catalog
+	printers   map[language.Tag]*message.Printer
 	tags       []language.Tag // default first, rest sorted; rebuilt on load
 	matcher    language.Matcher
 }
@@ -28,6 +30,7 @@ func NewBundle(defaultLang language.Tag) *Bundle {
 	return &Bundle{
 		defaultTag: defaultLang,
 		catalogs:   make(map[language.Tag]locale.Catalog),
+		printers:   make(map[language.Tag]*message.Printer),
 	}
 }
 
@@ -73,6 +76,7 @@ func (b *Bundle) add(c locale.Catalog) error {
 		return fmt.Errorf("i18n: locale %s already loaded", c.Tag)
 	}
 	b.catalogs[c.Tag] = c
+	b.printers[c.Tag] = message.NewPrinter(c.Tag)
 	b.rebuildMatcher()
 	return nil
 }

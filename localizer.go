@@ -65,7 +65,7 @@ func (b *Bundle) layer(tag language.Tag) layer {
 	return layer{
 		tag:     tag,
 		entries: b.catalogs[tag].Entries,
-		printer: message.NewPrinter(tag),
+		printer: b.printers[tag],
 	}
 }
 
