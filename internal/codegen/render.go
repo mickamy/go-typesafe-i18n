@@ -16,7 +16,9 @@ const importAlias = "i18n"
 // Render generates the Go source of the typed message package for the model.
 // The output is deterministic and gofmt-formatted.
 func Render(m Model, pkg string) ([]byte, error) {
-	if !token.IsIdentifier(pkg) {
+	// token.IsIdentifier accepts the blank identifier, which is not a valid
+	// package name.
+	if pkg == "_" || !token.IsIdentifier(pkg) {
 		return nil, fmt.Errorf("invalid package name %q", pkg)
 	}
 	var b strings.Builder

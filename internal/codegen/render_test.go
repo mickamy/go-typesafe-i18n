@@ -74,7 +74,7 @@ func TestRender_emptyModel(t *testing.T) {
 func TestRender_invalidPackageName(t *testing.T) {
 	t.Parallel()
 
-	for _, pkg := range []string{"", "1bad", "my-pkg"} {
+	for _, pkg := range []string{"", "1bad", "my-pkg", "_"} {
 		if _, err := codegen.Render(codegen.Model{}, pkg); err == nil {
 			t.Errorf("Render(%q) returned nil error", pkg)
 		}
