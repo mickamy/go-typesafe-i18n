@@ -9,6 +9,7 @@ package template
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -108,7 +109,7 @@ func Parse(src string) (Template, error) {
 
 // Params returns the template parameters in order of first appearance.
 func (t Template) Params() []Param {
-	return t.params
+	return slices.Clone(t.params)
 }
 
 // Explicit reports whether the parameter's kind was annotated explicitly in

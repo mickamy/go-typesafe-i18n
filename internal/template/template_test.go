@@ -133,6 +133,19 @@ func TestParse_error(t *testing.T) {
 	}
 }
 
+func TestTemplate_Params_returnsCopy(t *testing.T) {
+	t.Parallel()
+
+	tmpl, err := template.Parse("Hello, {name}!")
+	if err != nil {
+		t.Fatal(err)
+	}
+	tmpl.Params()[0].Kind = template.KindNumber
+	if got := tmpl.Params()[0].Kind; got != template.KindString {
+		t.Errorf("mutating the returned slice changed internal state: Kind = %v", got)
+	}
+}
+
 func TestTemplate_Explicit(t *testing.T) {
 	t.Parallel()
 
