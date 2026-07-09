@@ -1,17 +1,28 @@
 package locale
 
 import (
+	"bytes"
+	"errors"
 	"fmt"
+	"io"
 
 	"golang.org/x/text/language"
 	"gopkg.in/yaml.v3"
 )
 
-// ParseYAML parses YAML locale data.
+// ParseYAML parses YAML locale data. The data must hold a single document.
 func ParseYAML(tag language.Tag, data []byte) (Catalog, error) {
+	dec := yaml.NewDecoder(bytes.NewReader(data))
 	var root yaml.Node
-	if err := yaml.Unmarshal(data, &root); err != nil {
+	if err := dec.Decode(&root); err != nil {
+		if errors.Is(err, io.EOF) {
+			return Catalog{Tag: tag, Entries: make(map[string]Entry)}, nil
+		}
 		return Catalog{}, fmt.Errorf("parse yaml: %w", err)
+	}
+	var extra yaml.Node
+	if err := dec.Decode(&extra); !errors.Is(err, io.EOF) {
+		return Catalog{}, errors.New("multiple YAML documents are not supported")
 	}
 	if len(root.Content) == 0 {
 		return Catalog{Tag: tag, Entries: make(map[string]Entry)}, nil
