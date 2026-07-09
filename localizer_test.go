@@ -154,6 +154,18 @@ func TestLocalizer_Localize(t *testing.T) {
 			msg:  msg("items_count", i18n.Arg{Name: "count", Value: uint(5)}),
 			want: "You have 5 items.",
 		},
+		{
+			name: "int32 arg renders plain",
+			loc:  en,
+			msg:  msg("hello", i18n.Arg{Name: "name", Value: int32(42)}),
+			want: "Hello, 42!",
+		},
+		{
+			name: "uint64 arg beyond int range still renders",
+			loc:  en,
+			msg:  msg("hello", i18n.Arg{Name: "name", Value: uint64(math.MaxUint64)}),
+			want: "Hello, 18446744073709551615!",
+		},
 	}
 
 	for _, tt := range tests {
