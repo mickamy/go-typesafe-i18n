@@ -1,6 +1,7 @@
 package i18n
 
 import (
+	"errors"
 	"fmt"
 	"slices"
 	"strings"
@@ -72,6 +73,9 @@ func (b *Bundle) LoadTOML(lang language.Tag, data []byte) error {
 }
 
 func (b *Bundle) add(c locale.Catalog) error {
+	if b.catalogs == nil {
+		return errors.New("i18n: Bundle must be created with NewBundle")
+	}
 	if _, ok := b.catalogs[c.Tag]; ok {
 		return fmt.Errorf("i18n: locale %s already loaded", c.Tag)
 	}

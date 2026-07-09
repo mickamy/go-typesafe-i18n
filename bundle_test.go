@@ -61,6 +61,15 @@ func TestBundle_LoadFile_duplicateLanguage(t *testing.T) {
 	}
 }
 
+func TestBundle_zeroValueLoad(t *testing.T) {
+	t.Parallel()
+
+	var b i18n.Bundle
+	if err := b.LoadYAML(language.English, []byte("greeting: \"Hello!\"\n")); err == nil {
+		t.Error("LoadYAML on a zero-value Bundle returned nil error")
+	}
+}
+
 func TestBundle_MustLoadFile_panics(t *testing.T) {
 	t.Parallel()
 
