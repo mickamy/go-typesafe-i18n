@@ -35,6 +35,20 @@ func (k Kind) String() string {
 	}
 }
 
+// GoType returns the Go type of values of this kind in generated code.
+func (k Kind) GoType() string {
+	switch k {
+	case KindString:
+		return "string"
+	case KindInt:
+		return "int"
+	case KindNumber:
+		return "float64"
+	default:
+		return "string"
+	}
+}
+
 // Param is a parameter appearing in a template.
 type Param struct {
 	Name string

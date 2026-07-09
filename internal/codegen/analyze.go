@@ -184,22 +184,9 @@ func buildMessage(entry locale.Entry, params []template.Param) (Message, error) 
 			)
 		}
 		goNames[goName] = p.Name
-		msg.Params = append(msg.Params, Param{Name: p.Name, GoName: goName, GoType: goType(p.Kind)})
+		msg.Params = append(msg.Params, Param{Name: p.Name, GoName: goName, GoType: p.Kind.GoType()})
 	}
 	return msg, nil
-}
-
-func goType(k template.Kind) string {
-	switch k {
-	case template.KindInt:
-		return "int"
-	case template.KindNumber:
-		return "float64"
-	case template.KindString:
-		return "string"
-	default:
-		return "string"
-	}
 }
 
 // crossCheck validates a translation against the generation model: unknown

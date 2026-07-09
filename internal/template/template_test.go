@@ -133,6 +133,24 @@ func TestParse_error(t *testing.T) {
 	}
 }
 
+func TestKind_GoType(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		kind template.Kind
+		want string
+	}{
+		{kind: template.KindString, want: "string"},
+		{kind: template.KindInt, want: "int"},
+		{kind: template.KindNumber, want: "float64"},
+	}
+	for _, tt := range tests {
+		if got := tt.kind.GoType(); got != tt.want {
+			t.Errorf("GoType(%v) = %q, want %q", tt.kind, got, tt.want)
+		}
+	}
+}
+
 func TestTemplate_Params_returnsCopy(t *testing.T) {
 	t.Parallel()
 
