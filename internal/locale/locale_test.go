@@ -100,6 +100,24 @@ func TestEntry_Params(t *testing.T) {
 				{Name: "a", Kind: template.KindString},
 			},
 		},
+		{
+			name: "bare variant inherits explicit kind from earlier variant",
+			src:  "items:\n  one: \"{count} file, {size:number} bytes\"\n  other: \"{count} files, {size} bytes\"\n",
+			key:  "items",
+			want: []template.Param{
+				{Name: "count", Kind: template.KindInt},
+				{Name: "size", Kind: template.KindNumber},
+			},
+		},
+		{
+			name: "bare variant inherits explicit kind from later variant",
+			src:  "items:\n  one: \"{count} file, {size} bytes\"\n  other: \"{count} files, {size:number} bytes\"\n",
+			key:  "items",
+			want: []template.Param{
+				{Name: "count", Kind: template.KindInt},
+				{Name: "size", Kind: template.KindNumber},
+			},
+		},
 	}
 
 	for _, tt := range tests {

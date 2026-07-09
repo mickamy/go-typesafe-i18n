@@ -44,6 +44,7 @@ type Param struct {
 type Template struct {
 	segments []segment
 	params   []Param
+	explicit map[string]bool
 }
 
 // Parse parses a message template. A bare placeholder inherits an explicit
@@ -101,12 +102,19 @@ func Parse(src string) (Template, error) {
 		}
 	}
 	flush()
+	t.explicit = explicit
 	return t, nil
 }
 
 // Params returns the template parameters in order of first appearance.
 func (t Template) Params() []Param {
 	return t.params
+}
+
+// Explicit reports whether the parameter's kind was annotated explicitly in
+// this template rather than defaulted to string.
+func (t Template) Explicit(name string) bool {
+	return t.explicit[name]
 }
 
 // Render assembles the template, resolving each placeholder through resolve.

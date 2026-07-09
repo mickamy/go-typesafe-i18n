@@ -33,14 +33,16 @@ type Entry struct {
 
 // Params returns the parameters of the entry in generation order. Plural
 // entries always take CountParam (int) first; parameters of all variants
-// follow by first appearance in canonical category order and must not
-// conflict in kind across variants.
+// follow by first appearance in canonical category order. As within a single
+// template, a bare placeholder inherits a kind annotated explicitly in
+// another variant; only conflicting explicit annotations are an error.
 func (e Entry) Params() ([]template.Param, error) {
 	if e.Plural == nil {
 		return e.Single.Params(), nil
 	}
 	params := []template.Param{{Name: CountParam, Kind: template.KindInt}}
 	index := map[string]int{CountParam: 0}
+	explicit := map[string]bool{CountParam: true}
 	for _, category := range PluralCategories {
 		tmpl, ok := e.Plural[category]
 		if !ok {
@@ -53,15 +55,21 @@ func (e Entry) Params() ([]template.Param, error) {
 			at, seen := index[p.Name]
 			if !seen {
 				index[p.Name] = len(params)
+				explicit[p.Name] = tmpl.Explicit(p.Name)
 				params = append(params, p)
 				continue
 			}
-			if params[at].Kind != p.Kind {
+			if !tmpl.Explicit(p.Name) {
+				continue
+			}
+			if explicit[p.Name] && params[at].Kind != p.Kind {
 				return nil, fmt.Errorf(
 					"key %q: parameter %q is %s in one plural form and %s in another",
 					e.Key, p.Name, params[at].Kind, p.Kind,
 				)
 			}
+			params[at].Kind = p.Kind
+			explicit[p.Name] = true
 		}
 	}
 	return params, nil

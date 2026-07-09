@@ -132,6 +132,21 @@ func TestParse_error(t *testing.T) {
 	}
 }
 
+func TestTemplate_Explicit(t *testing.T) {
+	t.Parallel()
+
+	tmpl, err := template.Parse("{name} costs {price:number}")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if tmpl.Explicit("name") {
+		t.Error(`Explicit("name") = true, want false`)
+	}
+	if !tmpl.Explicit("price") {
+		t.Error(`Explicit("price") = false, want true`)
+	}
+}
+
 func TestTemplate_Render_kinds(t *testing.T) {
 	t.Parallel()
 
