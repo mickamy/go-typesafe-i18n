@@ -39,6 +39,12 @@ func ParseYAML(tag language.Tag, data []byte) (Catalog, error) {
 }
 
 func yamlNode(y *yaml.Node) (node, error) {
+	for y.Kind == yaml.AliasNode {
+		if y.Alias == nil {
+			return node{}, fmt.Errorf("line %d: unresolved alias", y.Line)
+		}
+		y = y.Alias
+	}
 	switch y.Kind {
 	case yaml.ScalarNode:
 		if y.Tag != "!!str" {

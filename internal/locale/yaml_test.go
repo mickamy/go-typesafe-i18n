@@ -36,6 +36,26 @@ func TestParseYAML_empty(t *testing.T) {
 	}
 }
 
+func TestParseYAML_aliases(t *testing.T) {
+	t.Parallel()
+
+	src := `
+brand: &brand "MyApp"
+welcome: *brand
+plans: &plans
+  free: "Free plan"
+  pro: "Pro plan"
+pricing: *plans
+`
+	c := mustParseYAML(t, src)
+	if got := render(c.Entries["welcome"].Single, nil); got != "MyApp" {
+		t.Errorf("welcome = %q, want %q", got, "MyApp")
+	}
+	if got := render(c.Entries["pricing.pro"].Single, nil); got != "Pro plan" {
+		t.Errorf("pricing.pro = %q, want %q", got, "Pro plan")
+	}
+}
+
 func TestParseYAML_pluralOtherOnly(t *testing.T) {
 	t.Parallel()
 
