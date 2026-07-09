@@ -41,7 +41,7 @@ type Warning string
 // Analyze loads every locale file in dir, builds the generation model from
 // the default locale, and validates the other locales against it.
 func Analyze(dir string, defaultLang language.Tag) (Model, []Warning, error) {
-	catalogs, err := loadCatalogs(dir)
+	catalogs, warnings, err := loadCatalogs(dir)
 	if err != nil {
 		return Model{}, nil, err
 	}
@@ -53,7 +53,6 @@ func Analyze(dir string, defaultLang language.Tag) (Model, []Warning, error) {
 	if err != nil {
 		return Model{}, nil, err
 	}
-	var warnings []Warning
 	for _, c := range catalogs {
 		if c.Tag == def.Tag {
 			continue
@@ -83,31 +82,39 @@ func defaultCatalog(catalogs []locale.Catalog, defaultLang language.Tag, dir str
 	return catalogs[idx], nil
 }
 
-func loadCatalogs(dir string) ([]locale.Catalog, error) {
+// loadCatalogs loads every locale file in dir. Files whose stem is not a
+// language tag (config.yaml and the like) are skipped with a warning rather
+// than failing the run, keeping typos visible without banning cohabitation.
+func loadCatalogs(dir string) ([]locale.Catalog, []Warning, error) {
 	entries, err := os.ReadDir(dir)
 	if err != nil {
-		return nil, fmt.Errorf("read locale directory: %w", err)
+		return nil, nil, fmt.Errorf("read locale directory: %w", err)
 	}
 	seen := make(map[language.Tag]string)
 	var catalogs []locale.Catalog
+	var warnings []Warning
 	for _, e := range entries {
 		if e.IsDir() || !isLocaleFile(e.Name()) {
 			continue
 		}
+		if _, err := locale.TagFromPath(e.Name()); err != nil {
+			warnings = append(warnings, Warning(fmt.Sprintf("skipping %s: %v", e.Name(), err)))
+			continue
+		}
 		c, err := locale.ParseFile(filepath.Join(dir, e.Name()))
 		if err != nil {
-			return nil, fmt.Errorf("load locale file: %w", err)
+			return nil, nil, fmt.Errorf("load locale file: %w", err)
 		}
 		if prev, ok := seen[c.Tag]; ok {
-			return nil, fmt.Errorf("locale %s defined by both %s and %s", c.Tag, prev, e.Name())
+			return nil, nil, fmt.Errorf("locale %s defined by both %s and %s", c.Tag, prev, e.Name())
 		}
 		seen[c.Tag] = e.Name()
 		catalogs = append(catalogs, c)
 	}
 	if len(catalogs) == 0 {
-		return nil, fmt.Errorf("no locale files found in %s", dir)
+		return nil, nil, fmt.Errorf("no locale files found in %s", dir)
 	}
-	return catalogs, nil
+	return catalogs, warnings, nil
 }
 
 func isLocaleFile(name string) bool {

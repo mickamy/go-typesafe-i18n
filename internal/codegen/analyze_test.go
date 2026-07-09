@@ -190,6 +190,25 @@ func TestAnalyze_error(t *testing.T) {
 	}
 }
 
+func TestAnalyze_skipsNonLocaleFiles(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "en.yaml"), "greeting: \"Hello!\"\n")
+	writeFile(t, filepath.Join(dir, "config.yaml"), "not: [a, locale, file]\n")
+
+	model, warnings, err := codegen.Analyze(dir, language.English)
+	if err != nil {
+		t.Fatalf("Analyze() returned error: %v", err)
+	}
+	if len(model.Messages) != 1 {
+		t.Errorf("len(Messages) = %d, want 1", len(model.Messages))
+	}
+	if len(warnings) != 1 || !strings.Contains(string(warnings[0]), "skipping config.yaml") {
+		t.Errorf("warnings = %v, want a skipping warning for config.yaml", warnings)
+	}
+}
+
 // The default locale resolves like the runtime matcher: a region-qualified
 // file satisfies a bare default language.
 func TestAnalyze_defaultLocaleViaMatcher(t *testing.T) {
