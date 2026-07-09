@@ -24,7 +24,7 @@ type Localizer struct {
 // Localizer returns a Localizer for the loaded locale best matching tag
 // (e.g., en-US matches en). Messages missing from the matched locale fall
 // back through the loaded parents of its language tag (en-GB falls back to
-// en) and finally through the default language.
+// en) and finally through the default language, if its catalog is loaded.
 func (b *Bundle) Localizer(tag language.Tag) Localizer {
 	if b.matcher == nil {
 		return Localizer{}
@@ -45,9 +45,9 @@ func (b *Bundle) Localizer(tag language.Tag) Localizer {
 }
 
 // Localize renders the message in the Localizer's language. It never fails:
-// a message missing from the language falls back to the default language and
-// finally to the message key itself, and a missing argument renders as the
-// placeholder name in braces.
+// a message missing from the language falls back to the default language
+// (when its catalog is loaded) and finally to the message key itself, and a
+// missing argument renders as the placeholder name in braces.
 func (l Localizer) Localize(m Message) string {
 	for _, ly := range l.layers {
 		entry, ok := ly.entries[m.Key]
