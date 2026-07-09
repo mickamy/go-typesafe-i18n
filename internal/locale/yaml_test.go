@@ -93,6 +93,7 @@ func TestParseYAML_error(t *testing.T) {
 		{name: "plural variant not a string", src: "items:\n  other:\n    nested: \"x\"\n"},
 		{name: "plural count as number", src: "items:\n  other: \"{count:number} items\"\n"},
 		{name: "multiple documents", src: "a: \"1\"\n---\nb: \"2\"\n"},
+		{name: "malformed second document", src: "a: \"1\"\n---\nb: [\n"},
 	}
 
 	for _, tt := range tests {

@@ -21,8 +21,11 @@ func ParseYAML(tag language.Tag, data []byte) (Catalog, error) {
 		return Catalog{}, fmt.Errorf("parse yaml: %w", err)
 	}
 	var extra yaml.Node
-	if err := dec.Decode(&extra); !errors.Is(err, io.EOF) {
+	switch err := dec.Decode(&extra); {
+	case err == nil:
 		return Catalog{}, errors.New("multiple YAML documents are not supported")
+	case !errors.Is(err, io.EOF):
+		return Catalog{}, fmt.Errorf("parse yaml: %w", err)
 	}
 	if len(root.Content) == 0 {
 		return Catalog{Tag: tag, Entries: make(map[string]Entry)}, nil
