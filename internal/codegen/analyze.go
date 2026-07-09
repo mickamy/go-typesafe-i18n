@@ -59,7 +59,7 @@ func Analyze(dir string, defaultLang language.Tag) (Model, []Warning, error) {
 		if c.Tag == defaultLang {
 			continue
 		}
-		w, err := crossCheck(def, c)
+		w, err := crossCheck(model, c)
 		if err != nil {
 			return Model{}, nil, err
 		}
@@ -165,26 +165,27 @@ func goType(k template.Kind) string {
 	}
 }
 
-// crossCheck validates a translation against the default catalog: unknown
+// crossCheck validates a translation against the generation model: unknown
 // keys, shape mismatches, and unknown parameters are errors, while keys
 // missing from the translation are warnings because the runtime falls back
-// to the default language.
-func crossCheck(def, other locale.Catalog) ([]Warning, error) {
+// to the default language. Reusing the model avoids rebuilding the default
+// entries' parameter lists per locale.
+func crossCheck(model Model, other locale.Catalog) ([]Warning, error) {
+	defMessages := make(map[string]Message, len(model.Messages))
+	for _, msg := range model.Messages {
+		defMessages[msg.Key] = msg
+	}
 	for _, key := range slices.Sorted(maps.Keys(other.Entries)) {
 		entry := other.Entries[key]
-		defEntry, ok := def.Entries[key]
+		defMsg, ok := defMessages[key]
 		if !ok {
-			return nil, fmt.Errorf("locale %s: key %q does not exist in default locale %s", other.Tag, key, def.Tag)
+			return nil, fmt.Errorf("locale %s: key %q does not exist in default locale %s", other.Tag, key, model.DefaultTag)
 		}
-		if (entry.Plural != nil) != (defEntry.Plural != nil) {
+		if (entry.Plural != nil) != defMsg.Plural {
 			return nil, fmt.Errorf("locale %s: key %q: plural shape differs from default locale", other.Tag, key)
 		}
-		defParams, err := defEntry.Params()
-		if err != nil {
-			return nil, fmt.Errorf("locale %s: %w", def.Tag, err)
-		}
-		known := make(map[string]bool, len(defParams))
-		for _, p := range defParams {
+		known := make(map[string]bool, len(defMsg.Params))
+		for _, p := range defMsg.Params {
 			known[p.Name] = true
 		}
 		params, err := entry.Params()
@@ -201,9 +202,9 @@ func crossCheck(def, other locale.Catalog) ([]Warning, error) {
 		}
 	}
 	var missing []string
-	for _, key := range slices.Sorted(maps.Keys(def.Entries)) {
-		if _, ok := other.Entries[key]; !ok {
-			missing = append(missing, key)
+	for _, msg := range model.Messages {
+		if _, ok := other.Entries[msg.Key]; !ok {
+			missing = append(missing, msg.Key)
 		}
 	}
 	if len(missing) > 0 {
