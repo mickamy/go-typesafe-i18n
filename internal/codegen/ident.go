@@ -15,8 +15,7 @@ import (
 func FuncName(key string) string {
 	var b strings.Builder
 	for _, part := range splitIdent(key) {
-		b.WriteString(strings.ToUpper(part[:1]))
-		b.WriteString(part[1:])
+		b.WriteString(upperFirst(part))
 	}
 	return b.String()
 }
@@ -31,8 +30,7 @@ func ParamName(name string) (string, error) {
 	var b strings.Builder
 	b.WriteString(parts[0])
 	for _, part := range parts[1:] {
-		b.WriteString(strings.ToUpper(part[:1]))
-		b.WriteString(part[1:])
+		b.WriteString(upperFirst(part))
 	}
 	out := b.String()
 	if out[0] >= '0' && out[0] <= '9' {
@@ -46,4 +44,8 @@ func ParamName(name string) (string, error) {
 
 func splitIdent(s string) []string {
 	return strings.FieldsFunc(s, func(r rune) bool { return r == '.' || r == '_' })
+}
+
+func upperFirst(s string) string {
+	return strings.ToUpper(s[:1]) + s[1:]
 }
