@@ -112,7 +112,7 @@ func ParseFile(path string) (Catalog, error) {
 		return Catalog{}, fmt.Errorf("read locale file: %w", err)
 	}
 	var c Catalog
-	switch ext := filepath.Ext(path); ext {
+	switch ext := strings.ToLower(filepath.Ext(path)); ext {
 	case ".yaml", ".yml":
 		c, err = ParseYAML(tag, data)
 	case ".toml":

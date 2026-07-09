@@ -40,6 +40,15 @@ func TestParseFile(t *testing.T) {
 	if got := render(ja.Entries["greeting"].Single, nil); got != "こんにちは！" {
 		t.Errorf("greeting = %q", got)
 	}
+
+	writeFile(t, filepath.Join(dir, "de.YAML"), "greeting: \"Hallo!\"\n")
+	de, err := locale.ParseFile(filepath.Join(dir, "de.YAML"))
+	if err != nil {
+		t.Fatalf("ParseFile(de.YAML) returned error: %v", err)
+	}
+	if de.Tag != language.German {
+		t.Errorf("de.Tag = %v, want %v", de.Tag, language.German)
+	}
 }
 
 func TestParseFile_error(t *testing.T) {
