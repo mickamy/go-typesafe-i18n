@@ -140,6 +140,12 @@ func buildMessage(entry locale.Entry, params []template.Param) (Message, error) 
 		if err != nil {
 			return Message{}, fmt.Errorf("key %q: %w", entry.Key, err)
 		}
+		if goName == importAlias {
+			return Message{}, fmt.Errorf(
+				"key %q: parameter %q conflicts with the generated import alias %q",
+				entry.Key, p.Name, importAlias,
+			)
+		}
 		if prev, ok := goNames[goName]; ok {
 			return Message{}, fmt.Errorf(
 				"key %q: parameters %q and %q both map to Go parameter %q",

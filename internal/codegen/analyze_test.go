@@ -156,6 +156,13 @@ func TestAnalyze_error(t *testing.T) {
 			want: "keyword",
 		},
 		{
+			name: "parameter shadows the import alias",
+			files: map[string]string{
+				"en.yaml": "greeting: \"{i18n}\"\n",
+			},
+			want: "import alias",
+		},
+		{
 			name: "conflicting kinds across plural variants in default",
 			files: map[string]string{
 				"en.yaml": "items:\n  one: \"{n:int} item\"\n  other: \"{n:number} items\"\n",
