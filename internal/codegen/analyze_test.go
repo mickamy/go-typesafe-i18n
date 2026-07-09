@@ -169,6 +169,14 @@ func TestAnalyze_error(t *testing.T) {
 			},
 			want: "in one plural form",
 		},
+		{
+			name: "conflicting kinds between default and translation",
+			files: map[string]string{
+				"en.yaml": "total_price: \"Total: {price:number}\"\n",
+				"ja.yaml": "total_price: \"合計: {price:int}\"\n",
+			},
+			want: "but default locale has float64",
+		},
 	}
 
 	for _, tt := range tests {

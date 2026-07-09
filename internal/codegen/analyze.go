@@ -200,11 +200,19 @@ func crossCheck(model Model, index map[string]Message, other locale.Catalog) ([]
 			return nil, fmt.Errorf("locale %s: %w", other.Tag, err)
 		}
 		for _, p := range params {
-			known := slices.ContainsFunc(defMsg.Params, func(dp Param) bool { return dp.Name == p.Name })
-			if !known {
+			at := slices.IndexFunc(defMsg.Params, func(dp Param) bool { return dp.Name == p.Name })
+			if at < 0 {
 				return nil, fmt.Errorf(
 					"locale %s: key %q: parameter %q does not exist in default locale",
 					other.Tag, key, p.Name,
+				)
+			}
+			// A bare placeholder cannot be distinguished from an explicit
+			// :string annotation, so only non-string kinds are compared.
+			if p.Kind != template.KindString && p.Kind.GoType() != defMsg.Params[at].GoType {
+				return nil, fmt.Errorf(
+					"locale %s: key %q: parameter %q has type %s, but default locale has %s",
+					other.Tag, key, p.Name, p.Kind.GoType(), defMsg.Params[at].GoType,
 				)
 			}
 		}
