@@ -36,6 +36,14 @@ other = "アイテムが{count}個あります。"
 not_found = "ユーザーが見つかりません。"
 `
 
+// Named types exercise the reflection fallback in plural selection and
+// argument formatting.
+type (
+	quantity int
+	amount   float64
+	username string
+)
+
 func newBundle(t *testing.T) *i18n.Bundle {
 	t.Helper()
 	b := i18n.NewBundle(language.English)
@@ -113,6 +121,24 @@ func TestLocalizer_Localize(t *testing.T) {
 			loc:  en,
 			msg:  msg("total_price", i18n.Arg{Name: "price", Value: float32(1234.5)}),
 			want: "Total: 1,234.5",
+		},
+		{
+			name: "named int type selects plural form",
+			loc:  en,
+			msg:  msg("items_count", i18n.Arg{Name: "count", Value: quantity(1)}),
+			want: "You have 1 item.",
+		},
+		{
+			name: "named float type with number annotation",
+			loc:  en,
+			msg:  msg("total_price", i18n.Arg{Name: "price", Value: amount(1234.56)}),
+			want: "Total: 1,234.56",
+		},
+		{
+			name: "named string type renders verbatim",
+			loc:  en,
+			msg:  msg("hello", i18n.Arg{Name: "name", Value: username("World")}),
+			want: "Hello, World!",
 		},
 		{name: "en nested key", loc: en, msg: msg("user.not_found"), want: "User not found."},
 		{name: "ja static", loc: ja, msg: msg("greeting"), want: "こんにちは！"},

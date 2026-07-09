@@ -3,6 +3,7 @@ package i18n
 import (
 	"fmt"
 	"math"
+	"reflect"
 	"strconv"
 
 	"golang.org/x/text/feature/plural"
@@ -110,10 +111,13 @@ func (ly layer) pluralVariant(entry locale.Entry, m Message) template.Template {
 // format renders an argument. A value of a parameter annotated :number is
 // formatted with the layer's locale conventions (e.g., 1,234.56) whatever
 // its numeric type; otherwise the value type decides: strings verbatim,
-// integers plain, and floats locale-formatted.
+// integers plain, and floats locale-formatted. Named types (type Price
+// float64) are followed to their underlying kind via reflection.
 func (ly layer) format(v any, kind template.Kind) string {
-	if kind == template.KindNumber && isNumeric(v) {
-		return ly.printer.Sprint(number.Decimal(v))
+	if kind == template.KindNumber {
+		if n, ok := numericValue(v); ok {
+			return ly.printer.Sprint(number.Decimal(n))
+		}
 	}
 	switch v := v.(type) {
 	case string:
@@ -124,50 +128,59 @@ func (ly layer) format(v any, kind template.Kind) string {
 	if n, ok := asInt(v); ok {
 		return strconv.Itoa(n)
 	}
-	return fmt.Sprint(v)
-}
-
-func isNumeric(v any) bool {
-	switch v.(type) {
-	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64:
-		return true
+	if v == nil {
+		return fmt.Sprint(v)
+	}
+	val := reflect.ValueOf(v)
+	switch val.Kind() { //nolint:exhaustive // remaining kinds render via fmt.Sprint
+	case reflect.String:
+		return val.String()
+	case reflect.Float32, reflect.Float64:
+		return ly.printer.Sprint(number.Decimal(val.Float()))
 	default:
-		return false
+		return fmt.Sprint(v)
 	}
 }
 
-// asInt converts any standard integer type to int for plural form matching.
-// Generated code always passes int; this keeps hand-built Messages working.
+// numericValue returns v as a canonical numeric type for locale-aware
+// formatting, following named types via reflection.
+func numericValue(v any) (any, bool) {
+	if v == nil {
+		return nil, false
+	}
+	val := reflect.ValueOf(v)
+	switch val.Kind() { //nolint:exhaustive // only numeric kinds format as numbers
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		return val.Int(), true
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		return val.Uint(), true
+	case reflect.Float32, reflect.Float64:
+		return val.Float(), true
+	default:
+		return nil, false
+	}
+}
+
+// asInt converts any integer value, including named integer types, to int
+// for plural form matching. Generated code always passes int; this keeps
+// hand-built Messages working.
 func asInt(v any) (int, bool) {
-	switch n := v.(type) {
-	case int:
+	if n, ok := v.(int); ok {
 		return n, true
-	case int8:
-		return int(n), true
-	case int16:
-		return int(n), true
-	case int32:
-		return int(n), true
-	case int64:
+	}
+	if v == nil {
+		return 0, false
+	}
+	val := reflect.ValueOf(v)
+	switch val.Kind() { //nolint:exhaustive // non-integer kinds are not counts
+	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+		n := val.Int()
 		if n < math.MinInt || n > math.MaxInt {
 			return 0, false
 		}
 		return int(n), true
-	case uint:
-		if uint64(n) > math.MaxInt {
-			return 0, false
-		}
-		return int(n), true
-	case uint8:
-		return int(n), true
-	case uint16:
-		return int(n), true
-	case uint32:
-		if uint64(n) > math.MaxInt {
-			return 0, false
-		}
-		return int(n), true
-	case uint64:
+	case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+		n := val.Uint()
 		if n > math.MaxInt {
 			return 0, false
 		}
