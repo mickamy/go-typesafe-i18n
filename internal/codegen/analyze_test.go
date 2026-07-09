@@ -190,6 +190,23 @@ func TestAnalyze_error(t *testing.T) {
 	}
 }
 
+// The default locale resolves like the runtime matcher: a region-qualified
+// file satisfies a bare default language.
+func TestAnalyze_defaultLocaleViaMatcher(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "en-US.yaml"), "greeting: \"Hello!\"\n")
+
+	model, _, err := codegen.Analyze(dir, language.English)
+	if err != nil {
+		t.Fatalf("Analyze() returned error: %v", err)
+	}
+	if model.DefaultTag != language.AmericanEnglish {
+		t.Errorf("DefaultTag = %v, want %v", model.DefaultTag, language.AmericanEnglish)
+	}
+}
+
 func TestAnalyze_missingDirectory(t *testing.T) {
 	t.Parallel()
 

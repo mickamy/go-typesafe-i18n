@@ -45,18 +45,17 @@ func Analyze(dir string, defaultLang language.Tag) (Model, []Warning, error) {
 	if err != nil {
 		return Model{}, nil, err
 	}
-	at := slices.IndexFunc(catalogs, func(c locale.Catalog) bool { return c.Tag == defaultLang })
-	if at < 0 {
-		return Model{}, nil, fmt.Errorf("default locale %s not found in %s", defaultLang, dir)
+	def, err := defaultCatalog(catalogs, defaultLang, dir)
+	if err != nil {
+		return Model{}, nil, err
 	}
-	def := catalogs[at]
 	model, err := buildModel(def)
 	if err != nil {
 		return Model{}, nil, err
 	}
 	var warnings []Warning
 	for _, c := range catalogs {
-		if c.Tag == defaultLang {
+		if c.Tag == def.Tag {
 			continue
 		}
 		w, err := crossCheck(model, c)
@@ -66,6 +65,22 @@ func Analyze(dir string, defaultLang language.Tag) (Model, []Warning, error) {
 		warnings = append(warnings, w...)
 	}
 	return model, warnings, nil
+}
+
+// defaultCatalog resolves the default locale among the loaded catalogs the
+// same way the runtime matches languages, so en-US.yaml satisfies -default
+// en. Low-confidence matches are rejected to avoid picking an unrelated
+// language.
+func defaultCatalog(catalogs []locale.Catalog, defaultLang language.Tag, dir string) (locale.Catalog, error) {
+	tags := make([]language.Tag, len(catalogs))
+	for i, c := range catalogs {
+		tags[i] = c.Tag
+	}
+	_, idx, conf := language.NewMatcher(tags).Match(defaultLang)
+	if conf < language.High {
+		return locale.Catalog{}, fmt.Errorf("default locale %s not found in %s (available: %v)", defaultLang, dir, tags)
+	}
+	return catalogs[idx], nil
 }
 
 func loadCatalogs(dir string) ([]locale.Catalog, error) {
