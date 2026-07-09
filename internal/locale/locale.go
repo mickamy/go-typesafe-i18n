@@ -144,7 +144,7 @@ func catalogFrom(tag language.Tag, root node) (Catalog, error) {
 func walkMapping(n node, prefix string, entries map[string]Entry) error {
 	seen := make(map[string]bool)
 	for _, ch := range n.children {
-		if !validKeySegment(ch.key) {
+		if !template.ValidName(ch.key) {
 			return fmt.Errorf("invalid key %q%s: must match [a-z][a-z0-9_]*", ch.key, at(ch.line))
 		}
 		if seen[ch.key] {
@@ -242,24 +242,6 @@ func parsePluralGroup(key string, n node) (Entry, error) {
 
 func isPluralCategory(s string) bool {
 	return slices.Contains(PluralCategories, s)
-}
-
-func validKeySegment(s string) bool {
-	if s == "" {
-		return false
-	}
-	for i, c := range s {
-		switch {
-		case 'a' <= c && c <= 'z':
-		case c == '_' || ('0' <= c && c <= '9'):
-			if i == 0 {
-				return false
-			}
-		default:
-			return false
-		}
-	}
-	return true
 }
 
 func at(line int) string {

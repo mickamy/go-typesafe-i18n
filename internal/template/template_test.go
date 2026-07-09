@@ -114,6 +114,7 @@ func TestParse_error(t *testing.T) {
 		{name: "unmatched closing brace", src: "Hello }"},
 		{name: "empty name", src: "{}"},
 		{name: "name starting with digit", src: "{9lives}"},
+		{name: "name starting with underscore", src: "{_x}"},
 		{name: "uppercase name", src: "{Name}"},
 		{name: "name with space", src: "{first name}"},
 		{name: "unknown kind", src: "{price:float}"},

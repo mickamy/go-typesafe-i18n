@@ -130,6 +130,27 @@ func (t Template) Render(resolve func(p Param) string) string {
 	return b.String()
 }
 
+// ValidName reports whether s is a valid parameter or catalog key segment
+// name: a lowercase letter followed by lowercase letters, digits, or
+// underscores ([a-z][a-z0-9_]*).
+func ValidName(s string) bool {
+	if s == "" {
+		return false
+	}
+	for i, c := range s {
+		switch {
+		case 'a' <= c && c <= 'z':
+		case c == '_' || ('0' <= c && c <= '9'):
+			if i == 0 {
+				return false
+			}
+		default:
+			return false
+		}
+	}
+	return true
+}
+
 // segment is either a literal text (param < 0) or a placeholder referencing
 // Template.params by index.
 type segment struct {
@@ -147,7 +168,7 @@ func parsePlaceholder(body string) (Param, bool, error) {
 		}
 		p.Kind = kind
 	}
-	if !validName(name) {
+	if !ValidName(name) {
 		return Param{}, false, fmt.Errorf("invalid name %q", name)
 	}
 	return p, hasKind, nil
@@ -164,22 +185,4 @@ func parseKind(s string) (Kind, bool) {
 	default:
 		return 0, false
 	}
-}
-
-func validName(s string) bool {
-	if s == "" {
-		return false
-	}
-	for i, c := range s {
-		switch {
-		case c == '_' || ('a' <= c && c <= 'z'):
-		case '0' <= c && c <= '9':
-			if i == 0 {
-				return false
-			}
-		default:
-			return false
-		}
-	}
-	return true
 }
