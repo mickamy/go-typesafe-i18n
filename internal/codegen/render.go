@@ -21,8 +21,10 @@ func Render(m Model, pkg string) ([]byte, error) {
 	}
 	var b strings.Builder
 	b.WriteString(header)
-	fmt.Fprintf(&b, "package %s\n\n", pkg)
-	b.WriteString("import (\n\t" + importAlias + " \"github.com/mickamy/go-typesafe-i18n\"\n)\n")
+	fmt.Fprintf(&b, "package %s\n", pkg)
+	if len(m.Messages) > 0 {
+		b.WriteString("\nimport (\n\t" + importAlias + " \"github.com/mickamy/go-typesafe-i18n\"\n)\n")
+	}
 	for _, msg := range m.Messages {
 		b.WriteString("\n")
 		writeMessage(&b, msg)

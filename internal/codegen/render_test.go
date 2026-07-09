@@ -7,6 +7,7 @@ import (
 	"go/token"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	"golang.org/x/text/language"
@@ -50,6 +51,23 @@ func TestRender_deterministic(t *testing.T) {
 
 	if !bytes.Equal(renderBasic(t), renderBasic(t)) {
 		t.Error("Render() is not deterministic")
+	}
+}
+
+// An empty default locale must still yield a compilable file: the runtime
+// import is unused in that case and gofmt does not strip unused imports.
+func TestRender_emptyModel(t *testing.T) {
+	t.Parallel()
+
+	got, err := codegen.Render(codegen.Model{}, "messages")
+	if err != nil {
+		t.Fatalf("Render() returned error: %v", err)
+	}
+	if strings.Contains(string(got), "import") {
+		t.Errorf("empty model output contains an unused import:\n%s", got)
+	}
+	if _, err := parser.ParseFile(token.NewFileSet(), "messages.gen.go", got, parser.AllErrors); err != nil {
+		t.Errorf("generated code does not parse: %v", err)
 	}
 }
 
