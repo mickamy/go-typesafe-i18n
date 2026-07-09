@@ -1,0 +1,16 @@
+# Example modules use the standard linter set instead of the strict root
+# config: they are demo code, and the root set flags patterns that are
+# intentional here (e.g., gosmopolitan on Japanese demo output).
+version: "2"
+
+formatters:
+  enable:
+    - gofmt
+    - goimports
+  settings:
+    goimports:
+      local-prefixes:
+        - github.com/mickamy/go-typesafe-i18n
+
+linters:
+  default: standard
