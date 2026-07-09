@@ -60,7 +60,8 @@ func Run(args []string, stdout, stderr io.Writer) error {
 	if err := os.MkdirAll(filepath.Dir(*out), 0o750); err != nil {
 		return fmt.Errorf("create output directory: %w", err)
 	}
-	if err := os.WriteFile(*out, src, 0o600); err != nil {
+	// #nosec G306 -- generated Go source uses the standard 0644 permissions
+	if err := os.WriteFile(*out, src, 0o644); err != nil {
 		return fmt.Errorf("write output: %w", err)
 	}
 	fmt.Fprintf(stdout, "generated %s (%d messages)\n", *out, len(model.Messages))
