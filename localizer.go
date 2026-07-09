@@ -86,7 +86,7 @@ func (ly layer) render(entry locale.Entry, m Message) string {
 		if !ok {
 			return "{" + p.Name + "}"
 		}
-		return ly.format(v)
+		return ly.format(v, p.Kind)
 	})
 }
 
@@ -107,19 +107,33 @@ func (ly layer) pluralVariant(entry locale.Entry, m Message) template.Template {
 	return tmpl
 }
 
-// format renders an argument by its value type: strings verbatim, integers
-// plain, and float64 with the layer's locale conventions (e.g., 1,234.56).
-func (ly layer) format(v any) string {
+// format renders an argument. A value of a parameter annotated :number is
+// formatted with the layer's locale conventions (e.g., 1,234.56) whatever
+// its numeric type; otherwise the value type decides: strings verbatim,
+// integers plain, and floats locale-formatted.
+func (ly layer) format(v any, kind template.Kind) string {
+	if kind == template.KindNumber && isNumeric(v) {
+		return ly.printer.Sprint(number.Decimal(v))
+	}
 	switch v := v.(type) {
 	case string:
 		return v
-	case float64:
+	case float64, float32:
 		return ly.printer.Sprint(number.Decimal(v))
 	}
 	if n, ok := asInt(v); ok {
 		return strconv.Itoa(n)
 	}
 	return fmt.Sprint(v)
+}
+
+func isNumeric(v any) bool {
+	switch v.(type) {
+	case int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64, float32, float64:
+		return true
+	default:
+		return false
+	}
 }
 
 // asInt converts any standard integer type to int for plural form matching.

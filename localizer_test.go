@@ -102,6 +102,18 @@ func TestLocalizer_Localize(t *testing.T) {
 			msg:  msg("total_price", i18n.Arg{Name: "price", Value: 1234.56}),
 			want: "Total: 1,234.56",
 		},
+		{
+			name: "number annotation formats int values",
+			loc:  en,
+			msg:  msg("total_price", i18n.Arg{Name: "price", Value: 1234567}),
+			want: "Total: 1,234,567",
+		},
+		{
+			name: "number annotation formats float32 values",
+			loc:  en,
+			msg:  msg("total_price", i18n.Arg{Name: "price", Value: float32(1234.5)}),
+			want: "Total: 1,234.5",
+		},
 		{name: "en nested key", loc: en, msg: msg("user.not_found"), want: "User not found."},
 		{name: "ja static", loc: ja, msg: msg("greeting"), want: "こんにちは！"},
 		{
