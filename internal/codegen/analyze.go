@@ -53,17 +53,26 @@ func Analyze(dir string, defaultLang language.Tag) (Model, []Warning, error) {
 	if err != nil {
 		return Model{}, nil, err
 	}
+	index := messageIndex(model)
 	for _, c := range catalogs {
 		if c.Tag == def.Tag {
 			continue
 		}
-		w, err := crossCheck(model, c)
+		w, err := crossCheck(model, index, c)
 		if err != nil {
 			return Model{}, nil, err
 		}
 		warnings = append(warnings, w...)
 	}
 	return model, warnings, nil
+}
+
+func messageIndex(m Model) map[string]Message {
+	index := make(map[string]Message, len(m.Messages))
+	for _, msg := range m.Messages {
+		index[msg.Key] = msg
+	}
+	return index
 }
 
 // defaultCatalog resolves the default locale among the loaded catalogs the
@@ -196,16 +205,12 @@ func goType(k template.Kind) string {
 // crossCheck validates a translation against the generation model: unknown
 // keys, shape mismatches, and unknown parameters are errors, while keys
 // missing from the translation are warnings because the runtime falls back
-// to the default language. Reusing the model avoids rebuilding the default
-// entries' parameter lists per locale.
-func crossCheck(model Model, other locale.Catalog) ([]Warning, error) {
-	defMessages := make(map[string]Message, len(model.Messages))
-	for _, msg := range model.Messages {
-		defMessages[msg.Key] = msg
-	}
+// to the default language. index maps message keys to model messages and is
+// built once by Analyze.
+func crossCheck(model Model, index map[string]Message, other locale.Catalog) ([]Warning, error) {
 	for _, key := range slices.Sorted(maps.Keys(other.Entries)) {
 		entry := other.Entries[key]
-		defMsg, ok := defMessages[key]
+		defMsg, ok := index[key]
 		if !ok {
 			return nil, fmt.Errorf("locale %s: key %q does not exist in default locale %s", other.Tag, key, model.DefaultTag)
 		}
