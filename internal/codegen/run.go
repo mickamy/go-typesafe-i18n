@@ -43,7 +43,11 @@ func Run(args []string, stdout, stderr io.Writer) error {
 	}
 	name := *pkg
 	if name == "" {
-		name = filepath.Base(filepath.Dir(*out))
+		absOut, err := filepath.Abs(*out)
+		if err != nil {
+			return fmt.Errorf("resolve output path: %w", err)
+		}
+		name = filepath.Base(filepath.Dir(absOut))
 	}
 	src, err := Render(model, name)
 	if err != nil {

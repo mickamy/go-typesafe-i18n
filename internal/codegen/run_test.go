@@ -96,6 +96,29 @@ func TestRun_pkgFlag(t *testing.T) {
 	}
 }
 
+// No t.Parallel: t.Chdir is incompatible with parallel tests.
+func TestRun_outInCurrentDir(t *testing.T) { //nolint:paralleltest
+	dir := filepath.Join(t.TempDir(), "myapp")
+	if err := os.Mkdir(dir, 0o750); err != nil {
+		t.Fatal(err)
+	}
+	writeFile(t, filepath.Join(dir, "en.yaml"), "greeting: \"Hello!\"\n")
+	t.Chdir(dir)
+
+	var stdout, stderr bytes.Buffer
+	err := codegen.Run([]string{"-dir", ".", "-out", "messages.gen.go"}, &stdout, &stderr)
+	if err != nil {
+		t.Fatalf("Run() returned error: %v", err)
+	}
+	src, err := os.ReadFile("messages.gen.go")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(src), "package myapp") {
+		t.Errorf("generated file does not derive the package from the current directory:\n%s", src)
+	}
+}
+
 func TestRun_error(t *testing.T) {
 	t.Parallel()
 
