@@ -217,16 +217,13 @@ func crossCheck(model Model, index map[string]Message, other locale.Catalog) ([]
 		if (entry.Plural != nil) != defMsg.Plural {
 			return nil, fmt.Errorf("locale %s: key %q: plural shape differs from default locale", other.Tag, key)
 		}
-		known := make(map[string]bool, len(defMsg.Params))
-		for _, p := range defMsg.Params {
-			known[p.Name] = true
-		}
 		params, err := entry.Params()
 		if err != nil {
 			return nil, fmt.Errorf("locale %s: %w", other.Tag, err)
 		}
 		for _, p := range params {
-			if !known[p.Name] {
+			known := slices.ContainsFunc(defMsg.Params, func(dp Param) bool { return dp.Name == p.Name })
+			if !known {
 				return nil, fmt.Errorf(
 					"locale %s: key %q: parameter %q does not exist in default locale",
 					other.Tag, key, p.Name,
