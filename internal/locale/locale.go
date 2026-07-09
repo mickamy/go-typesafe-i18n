@@ -126,6 +126,17 @@ func ParseFile(path string) (Catalog, error) {
 	return c, nil
 }
 
+// SupportedFile reports whether the file has a supported locale format
+// extension (.yaml, .yml, or .toml, case-insensitive).
+func SupportedFile(path string) bool {
+	switch strings.ToLower(filepath.Ext(path)) {
+	case ".yaml", ".yml", ".toml":
+		return true
+	default:
+		return false
+	}
+}
+
 // TagFromPath derives the language tag from the filename stem.
 func TagFromPath(path string) (language.Tag, error) {
 	base := filepath.Base(path)

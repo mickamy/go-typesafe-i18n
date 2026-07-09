@@ -154,6 +154,21 @@ func TestEntry_Params_kindConflict(t *testing.T) {
 	}
 }
 
+func TestSupportedFile(t *testing.T) {
+	t.Parallel()
+
+	for _, path := range []string{"en.yaml", "en.yml", "ja.toml", "de.YAML", "locales/en.yaml"} {
+		if !locale.SupportedFile(path) {
+			t.Errorf("SupportedFile(%q) = false, want true", path)
+		}
+	}
+	for _, path := range []string{"en.json", "en", "en.yaml.bak", "README.md"} {
+		if locale.SupportedFile(path) {
+			t.Errorf("SupportedFile(%q) = true, want false", path)
+		}
+	}
+}
+
 func TestTagFromPath(t *testing.T) {
 	t.Parallel()
 

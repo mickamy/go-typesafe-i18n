@@ -103,7 +103,7 @@ func loadCatalogs(dir string) ([]locale.Catalog, []Warning, error) {
 	var catalogs []locale.Catalog
 	var warnings []Warning
 	for _, e := range entries {
-		if e.IsDir() || !isLocaleFile(e.Name()) {
+		if e.IsDir() || !locale.SupportedFile(e.Name()) {
 			continue
 		}
 		if _, err := locale.TagFromPath(e.Name()); err != nil {
@@ -124,15 +124,6 @@ func loadCatalogs(dir string) ([]locale.Catalog, []Warning, error) {
 		return nil, nil, fmt.Errorf("no locale files found in %s", dir)
 	}
 	return catalogs, warnings, nil
-}
-
-func isLocaleFile(name string) bool {
-	switch strings.ToLower(filepath.Ext(name)) {
-	case ".yaml", ".yml", ".toml":
-		return true
-	default:
-		return false
-	}
 }
 
 func buildModel(def locale.Catalog) (Model, error) {
