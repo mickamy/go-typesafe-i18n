@@ -90,7 +90,7 @@ func (ly layer) pluralVariant(entry locale.Entry, m Message) template.Template {
 	form := "other"
 	if v, ok := lookupArg(m, locale.CountParam); ok {
 		if n, ok := asInt(v); ok {
-			form = formName(pluralForm(ly.tag, n))
+			form = locale.FormName(pluralForm(ly.tag, n))
 		}
 	}
 	tmpl, ok := entry.Plural[form]
@@ -173,23 +173,4 @@ func pluralForm(tag language.Tag, n int) plural.Form {
 		n = -n
 	}
 	return plural.Cardinal.MatchPlural(tag, n, 0, 0, 0, 0)
-}
-
-func formName(f plural.Form) string {
-	switch f {
-	case plural.Zero:
-		return "zero"
-	case plural.One:
-		return "one"
-	case plural.Two:
-		return "two"
-	case plural.Few:
-		return "few"
-	case plural.Many:
-		return "many"
-	case plural.Other:
-		return "other"
-	default:
-		return "other"
-	}
 }

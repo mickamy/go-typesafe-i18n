@@ -13,6 +13,7 @@ import (
 	"slices"
 	"strings"
 
+	"golang.org/x/text/feature/plural"
 	"golang.org/x/text/language"
 
 	"github.com/mickamy/go-typesafe-i18n/internal/template"
@@ -23,6 +24,24 @@ const CountParam = "count"
 
 // PluralCategories lists the CLDR plural categories in canonical order.
 var PluralCategories = []string{"zero", "one", "two", "few", "many", "other"}
+
+var formNames = map[plural.Form]string{
+	plural.Zero:  "zero",
+	plural.One:   "one",
+	plural.Two:   "two",
+	plural.Few:   "few",
+	plural.Many:  "many",
+	plural.Other: "other",
+}
+
+// FormName returns the catalog category name of a CLDR plural form,
+// defaulting to "other".
+func FormName(f plural.Form) string {
+	if name, ok := formNames[f]; ok {
+		return name
+	}
+	return "other"
+}
 
 // Entry is a single message in a catalog.
 type Entry struct {
