@@ -9,7 +9,9 @@ import (
 )
 
 // FuncName converts a message key to an exported Go function name:
-// "user.not_found" becomes "UserNotFound".
+// "user.not_found" becomes "UserNotFound". Keys are ASCII-only (validated
+// against [a-z][a-z0-9_]* per segment at parse time), so byte slicing is
+// safe here.
 func FuncName(key string) string {
 	var b strings.Builder
 	for _, part := range splitIdent(key) {
@@ -20,7 +22,7 @@ func FuncName(key string) string {
 }
 
 // ParamName converts a placeholder name to a camelCase Go parameter name:
-// "user_name" becomes "userName".
+// "user_name" becomes "userName". Names are ASCII-only, as with FuncName.
 func ParamName(name string) (string, error) {
 	parts := splitIdent(name)
 	if len(parts) == 0 {
