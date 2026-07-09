@@ -243,6 +243,41 @@ func TestBundle_Localizer_germanNumberFormat(t *testing.T) {
 	}
 }
 
+func TestBundle_Localizer_parentChainFallback(t *testing.T) {
+	t.Parallel()
+
+	b := i18n.NewBundle(language.Japanese)
+	if err := b.LoadYAML(language.Japanese, []byte("greeting: \"こんにちは！\"\nonly_ja: \"ja only\"\n")); err != nil {
+		t.Fatal(err)
+	}
+	if err := b.LoadYAML(language.English, []byte("greeting: \"Hello!\"\nonly_en: \"EN only\"\n")); err != nil {
+		t.Fatal(err)
+	}
+	if err := b.LoadYAML(language.BritishEnglish, []byte("greeting: \"Hello, mate!\"\n")); err != nil {
+		t.Fatal(err)
+	}
+
+	enGB := b.Localizer(language.BritishEnglish)
+	tests := []struct {
+		name string
+		key  string
+		want string
+	}{
+		{name: "own catalog wins", key: "greeting", want: "Hello, mate!"},
+		{name: "parent language before default", key: "only_en", want: "EN only"},
+		{name: "default language last", key: "only_ja", want: "ja only"},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			if got := enGB.Localize(msg(tt.key)); got != tt.want {
+				t.Errorf("Localize(%q) = %q, want %q", tt.key, got, tt.want)
+			}
+		})
+	}
+}
+
 func TestBundle_Localizer_withoutDefaultCatalog(t *testing.T) {
 	t.Parallel()
 

@@ -21,16 +21,23 @@ type Localizer struct {
 }
 
 // Localizer returns a Localizer for the loaded locale best matching tag
-// (e.g., en-US matches en), falling back to the default language when
-// nothing matches.
+// (e.g., en-US matches en). Messages missing from the matched locale fall
+// back through the loaded parents of its language tag (en-GB falls back to
+// en) and finally through the default language.
 func (b *Bundle) Localizer(tag language.Tag) Localizer {
 	if b.matcher == nil {
 		return Localizer{}
 	}
 	_, idx, _ := b.matcher.Match(tag)
-	matched := b.tags[idx]
-	layers := []layer{b.layer(matched)}
-	if _, hasDefault := b.catalogs[b.defaultTag]; hasDefault && matched != b.defaultTag {
+	var layers []layer
+	seen := make(map[language.Tag]bool)
+	for t := b.tags[idx]; t != language.Und && !seen[t]; t = t.Parent() {
+		seen[t] = true
+		if _, ok := b.catalogs[t]; ok {
+			layers = append(layers, b.layer(t))
+		}
+	}
+	if _, ok := b.catalogs[b.defaultTag]; ok && !seen[b.defaultTag] {
 		layers = append(layers, b.layer(b.defaultTag))
 	}
 	return Localizer{layers: layers}
