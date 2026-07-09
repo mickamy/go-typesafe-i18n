@@ -86,9 +86,9 @@ func (b *Bundle) add(c locale.Catalog) error {
 }
 
 // rebuildMatcher caches the matcher and its tag list so Localizer does not
-// pay for matcher construction on every call. The default language comes
-// first so that unmatched requests resolve to it; the rest are sorted for
-// determinism.
+// pay for matcher construction on every call. The default language, when its
+// catalog is loaded, comes first so that unmatched requests resolve to it;
+// the rest are sorted for determinism.
 func (b *Bundle) rebuildMatcher() {
 	tags := make([]language.Tag, 0, len(b.catalogs))
 	if _, ok := b.catalogs[b.defaultTag]; ok {
