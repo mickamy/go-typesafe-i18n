@@ -7,8 +7,8 @@ type Arg struct {
 }
 
 // Message identifies a localizable message and carries its arguments.
-// Messages are usually constructed by code generated with cmd/gen rather
-// than by hand.
+// Messages are usually constructed by code generated with
+// cmd/go-typesafe-i18n rather than by hand.
 type Message struct {
 	Key  string
 	Args []Arg
