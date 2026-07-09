@@ -201,7 +201,7 @@ func lookupArg(m Message, name string) (any, bool) {
 
 func pluralForm(tag language.Tag, n int) plural.Form {
 	if n == math.MinInt {
-		n++ // |math.MinInt| overflows int; the plural form is unaffected at this magnitude
+		n++ // |math.MinInt| is not representable; nudge to keep the negation below valid
 	}
 	if n < 0 {
 		n = -n
