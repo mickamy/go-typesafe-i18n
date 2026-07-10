@@ -45,10 +45,11 @@ func Analyze(dir string, defaultLang language.Tag) (Model, []Warning, error) {
 	if err != nil {
 		return Model{}, nil, err
 	}
-	def, err := defaultCatalog(catalogs, defaultLang, dir)
+	def, defWarnings, err := defaultCatalog(catalogs, defaultLang, dir)
 	if err != nil {
 		return Model{}, nil, err
 	}
+	warnings = append(warnings, defWarnings...)
 	model, err := buildModel(def)
 	if err != nil {
 		return Model{}, nil, err
@@ -79,18 +80,40 @@ func messageIndex(m Model) map[string]Message {
 // same way the runtime matches languages, so en-US.yaml satisfies -default
 // en. Unrelated languages are rejected, but same-base variants are accepted
 // even at low matcher confidence (zh-Hant for zh scores Low despite being
-// the right pick).
-func defaultCatalog(catalogs []locale.Catalog, defaultLang language.Tag, dir string) (locale.Catalog, error) {
+// the right pick). An exact tag match wins outright; when several variants
+// could serve a bare default, the implicit CLDR pick is reported as a
+// warning.
+func defaultCatalog(catalogs []locale.Catalog, lang language.Tag, dir string) (locale.Catalog, []Warning, error) {
 	tags := make([]language.Tag, len(catalogs))
 	for i, c := range catalogs {
+		if c.Tag == lang {
+			return c, nil, nil
+		}
 		tags[i] = c.Tag
 	}
-	_, idx, conf := language.NewMatcher(tags).Match(defaultLang)
+	_, idx, conf := language.NewMatcher(tags).Match(lang)
 	matched := catalogs[idx]
-	if conf < language.High && !sameBase(defaultLang, matched.Tag) {
-		return locale.Catalog{}, fmt.Errorf("default locale %s not found in %s (available: %v)", defaultLang, dir, tags)
+	if conf < language.High && !sameBase(lang, matched.Tag) {
+		return locale.Catalog{}, nil, fmt.Errorf("default locale %s not found in %s (available: %v)", lang, dir, tags)
 	}
-	return matched, nil
+	var warnings []Warning
+	if candidates := sameBaseTags(tags, lang); len(candidates) > 1 {
+		warnings = append(warnings, Warning(fmt.Sprintf(
+			"default locale %s is ambiguous (candidates: %v); using %s, pass an exact -default to override",
+			lang, candidates, matched.Tag,
+		)))
+	}
+	return matched, warnings, nil
+}
+
+func sameBaseTags(tags []language.Tag, lang language.Tag) []language.Tag {
+	var out []language.Tag
+	for _, t := range tags {
+		if sameBase(t, lang) {
+			out = append(out, t)
+		}
+	}
+	return out
 }
 
 func sameBase(a, b language.Tag) bool {

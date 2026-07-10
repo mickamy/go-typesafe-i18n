@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"slices"
 	"strings"
 	"testing"
 
@@ -257,6 +258,46 @@ func TestAnalyze_defaultLocaleViaMatcher(t *testing.T) {
 				t.Errorf("DefaultTag = %v, want %v", model.DefaultTag, tt.want)
 			}
 		})
+	}
+}
+
+func TestAnalyze_ambiguousDefaultLocale(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "en-GB.yaml"), "greeting: \"Hello!\"\n")
+	writeFile(t, filepath.Join(dir, "en-US.yaml"), "greeting: \"Hello!\"\n")
+
+	_, warnings, err := codegen.Analyze(dir, language.English)
+	if err != nil {
+		t.Fatalf("Analyze() returned error: %v", err)
+	}
+	found := slices.ContainsFunc(warnings, func(w codegen.Warning) bool {
+		return strings.Contains(string(w), "ambiguous")
+	})
+	if !found {
+		t.Errorf("warnings = %v, want an ambiguity warning", warnings)
+	}
+}
+
+func TestAnalyze_exactDefaultLocaleIsNotAmbiguous(t *testing.T) {
+	t.Parallel()
+
+	dir := t.TempDir()
+	writeFile(t, filepath.Join(dir, "en.yaml"), "greeting: \"Hello!\"\n")
+	writeFile(t, filepath.Join(dir, "en-US.yaml"), "greeting: \"Hello!\"\n")
+
+	model, warnings, err := codegen.Analyze(dir, language.English)
+	if err != nil {
+		t.Fatalf("Analyze() returned error: %v", err)
+	}
+	if model.DefaultTag != language.English {
+		t.Errorf("DefaultTag = %v, want %v", model.DefaultTag, language.English)
+	}
+	for _, w := range warnings {
+		if strings.Contains(string(w), "ambiguous") {
+			t.Errorf("unexpected ambiguity warning: %v", w)
+		}
 	}
 }
 
