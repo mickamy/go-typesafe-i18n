@@ -77,18 +77,26 @@ func messageIndex(m Model) map[string]Message {
 
 // defaultCatalog resolves the default locale among the loaded catalogs the
 // same way the runtime matches languages, so en-US.yaml satisfies -default
-// en. Low-confidence matches are rejected to avoid picking an unrelated
-// language.
+// en. Unrelated languages are rejected, but same-base variants are accepted
+// even at low matcher confidence (zh-Hant for zh scores Low despite being
+// the right pick).
 func defaultCatalog(catalogs []locale.Catalog, defaultLang language.Tag, dir string) (locale.Catalog, error) {
 	tags := make([]language.Tag, len(catalogs))
 	for i, c := range catalogs {
 		tags[i] = c.Tag
 	}
 	_, idx, conf := language.NewMatcher(tags).Match(defaultLang)
-	if conf < language.High {
+	matched := catalogs[idx]
+	if conf < language.High && !sameBase(defaultLang, matched.Tag) {
 		return locale.Catalog{}, fmt.Errorf("default locale %s not found in %s (available: %v)", defaultLang, dir, tags)
 	}
-	return catalogs[idx], nil
+	return matched, nil
+}
+
+func sameBase(a, b language.Tag) bool {
+	baseA, _ := a.Base()
+	baseB, _ := b.Base()
+	return baseA == baseB
 }
 
 // loadCatalogs loads every locale file in dir. Files whose stem is not a

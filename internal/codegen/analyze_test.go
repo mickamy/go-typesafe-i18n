@@ -217,20 +217,46 @@ func TestAnalyze_skipsNonLocaleFiles(t *testing.T) {
 	}
 }
 
-// The default locale resolves like the runtime matcher: a region-qualified
-// file satisfies a bare default language.
+// The default locale resolves like the runtime matcher: region- and
+// script-qualified files satisfy a bare default language.
 func TestAnalyze_defaultLocaleViaMatcher(t *testing.T) {
 	t.Parallel()
 
-	dir := t.TempDir()
-	writeFile(t, filepath.Join(dir, "en-US.yaml"), "greeting: \"Hello!\"\n")
-
-	model, _, err := codegen.Analyze(dir, language.English)
-	if err != nil {
-		t.Fatalf("Analyze() returned error: %v", err)
+	tests := []struct {
+		name        string
+		file        string
+		defaultLang language.Tag
+		want        language.Tag
+	}{
+		{
+			name:        "region variant",
+			file:        "en-US.yaml",
+			defaultLang: language.English,
+			want:        language.AmericanEnglish,
+		},
+		{
+			name:        "script variant",
+			file:        "zh-Hant.yaml",
+			defaultLang: language.Chinese,
+			want:        language.TraditionalChinese,
+		},
 	}
-	if model.DefaultTag != language.AmericanEnglish {
-		t.Errorf("DefaultTag = %v, want %v", model.DefaultTag, language.AmericanEnglish)
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			dir := t.TempDir()
+			writeFile(t, filepath.Join(dir, tt.file), "greeting: \"Hello!\"\n")
+
+			model, _, err := codegen.Analyze(dir, tt.defaultLang)
+			if err != nil {
+				t.Fatalf("Analyze() returned error: %v", err)
+			}
+			if model.DefaultTag != tt.want {
+				t.Errorf("DefaultTag = %v, want %v", model.DefaultTag, tt.want)
+			}
+		})
 	}
 }
 
