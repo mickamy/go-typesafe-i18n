@@ -103,6 +103,10 @@ type Catalog struct {
 // ParseFile parses a locale file, deriving the language from the filename
 // stem (e.g., "en.yaml" is English) and the format from the extension.
 func ParseFile(path string) (Catalog, error) {
+	parse, ok := parserFor(path)
+	if !ok {
+		return Catalog{}, fmt.Errorf("%s: unsupported file extension %q", path, filepath.Ext(path))
+	}
 	tag, err := TagFromPath(path)
 	if err != nil {
 		return Catalog{}, err
@@ -111,15 +115,7 @@ func ParseFile(path string) (Catalog, error) {
 	if err != nil {
 		return Catalog{}, fmt.Errorf("read locale file: %w", err)
 	}
-	var c Catalog
-	switch ext := strings.ToLower(filepath.Ext(path)); ext {
-	case ".yaml", ".yml":
-		c, err = ParseYAML(tag, data)
-	case ".toml":
-		c, err = ParseTOML(tag, data)
-	default:
-		return Catalog{}, fmt.Errorf("%s: unsupported file extension %q", path, ext)
-	}
+	c, err := parse(tag, data)
 	if err != nil {
 		return Catalog{}, fmt.Errorf("%s: %w", path, err)
 	}
@@ -129,11 +125,20 @@ func ParseFile(path string) (Catalog, error) {
 // SupportedFile reports whether the file has a supported locale format
 // extension (.yaml, .yml, or .toml, case-insensitive).
 func SupportedFile(path string) bool {
+	_, ok := parserFor(path)
+	return ok
+}
+
+// parserFor maps a file extension to its parser. It is the single registry
+// of supported locale formats.
+func parserFor(path string) (func(language.Tag, []byte) (Catalog, error), bool) {
 	switch strings.ToLower(filepath.Ext(path)) {
-	case ".yaml", ".yml", ".toml":
-		return true
+	case ".yaml", ".yml":
+		return ParseYAML, true
+	case ".toml":
+		return ParseTOML, true
 	default:
-		return false
+		return nil, false
 	}
 }
 
