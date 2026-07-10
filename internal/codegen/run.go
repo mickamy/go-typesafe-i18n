@@ -1,6 +1,7 @@
 package codegen
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -24,6 +25,9 @@ func Run(args []string, stdout, stderr io.Writer) error {
 		check       = fs.Bool("check", false, "validate the locales without writing the output file")
 	)
 	if err := fs.Parse(args); err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return nil // usage has been printed; -h is a clean exit
+		}
 		return fmt.Errorf("parse flags: %w", err)
 	}
 	if fs.NArg() > 0 {

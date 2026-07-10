@@ -119,6 +119,18 @@ func TestRun_outInCurrentDir(t *testing.T) { //nolint:paralleltest
 	}
 }
 
+func TestRun_help(t *testing.T) {
+	t.Parallel()
+
+	var stdout, stderr bytes.Buffer
+	if err := codegen.Run([]string{"-h"}, &stdout, &stderr); err != nil {
+		t.Errorf("Run(-h) returned error: %v", err)
+	}
+	if !strings.Contains(stderr.String(), "-out") {
+		t.Errorf("stderr = %q, want flag usage", stderr.String())
+	}
+}
+
 func TestRun_error(t *testing.T) {
 	t.Parallel()
 
