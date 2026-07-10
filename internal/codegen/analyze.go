@@ -137,6 +137,9 @@ func loadCatalogs(dir string) ([]locale.Catalog, []Warning, error) {
 		if e.IsDir() || !locale.SupportedFile(e.Name()) {
 			continue
 		}
+		// Pre-check the stem separately from ParseFile so that non-locale
+		// files are skipped with a warning while broken locale files below
+		// still fail the run. The duplicate tag derivation is deliberate.
 		if _, err := locale.TagFromPath(e.Name()); err != nil {
 			warnings = append(warnings, Warning(fmt.Sprintf("skipping %s: %v", e.Name(), err)))
 			continue
