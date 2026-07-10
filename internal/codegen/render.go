@@ -47,12 +47,12 @@ func writeMessage(b *strings.Builder, msg Message) {
 		}
 		fmt.Fprintf(b, "%s %s", p.GoName, p.GoType)
 	}
-	b.WriteString(") i18n.Message {\n")
+	fmt.Fprintf(b, ") %s.Message {\n", importAlias)
 	if len(msg.Params) == 0 {
-		fmt.Fprintf(b, "\treturn i18n.Message{Key: %q}\n}\n", msg.Key)
+		fmt.Fprintf(b, "\treturn %s.Message{Key: %q}\n}\n", importAlias, msg.Key)
 		return
 	}
-	fmt.Fprintf(b, "\treturn i18n.Message{Key: %q, Args: []i18n.Arg{\n", msg.Key)
+	fmt.Fprintf(b, "\treturn %s.Message{Key: %q, Args: []%s.Arg{\n", importAlias, msg.Key, importAlias)
 	for _, p := range msg.Params {
 		fmt.Fprintf(b, "\t\t{Name: %q, Value: %s},\n", p.Name, p.GoName)
 	}
