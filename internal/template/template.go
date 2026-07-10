@@ -35,6 +35,22 @@ func (k Kind) String() string {
 	}
 }
 
+// GoType returns the Go type of values of this kind in generated code.
+// It panics on an unknown Kind: silently defaulting would generate wrongly
+// typed constructors, and this is only reachable from the generator.
+func (k Kind) GoType() string {
+	switch k {
+	case KindString:
+		return "string"
+	case KindInt:
+		return "int"
+	case KindNumber:
+		return "float64"
+	default:
+		panic(fmt.Sprintf("template: unknown Kind %d", k))
+	}
+}
+
 // Param is a parameter appearing in a template.
 type Param struct {
 	Name string

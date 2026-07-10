@@ -133,6 +133,35 @@ func TestParse_error(t *testing.T) {
 	}
 }
 
+func TestKind_GoType(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		kind template.Kind
+		want string
+	}{
+		{kind: template.KindString, want: "string"},
+		{kind: template.KindInt, want: "int"},
+		{kind: template.KindNumber, want: "float64"},
+	}
+	for _, tt := range tests {
+		if got := tt.kind.GoType(); got != tt.want {
+			t.Errorf("GoType(%v) = %q, want %q", tt.kind, got, tt.want)
+		}
+	}
+}
+
+func TestKind_GoType_unknownPanics(t *testing.T) {
+	t.Parallel()
+
+	defer func() {
+		if recover() == nil {
+			t.Error("GoType() did not panic for an unknown Kind")
+		}
+	}()
+	_ = template.Kind(99).GoType()
+}
+
 func TestTemplate_Params_returnsCopy(t *testing.T) {
 	t.Parallel()
 
