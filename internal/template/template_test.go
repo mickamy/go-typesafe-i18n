@@ -151,6 +151,17 @@ func TestKind_GoType(t *testing.T) {
 	}
 }
 
+func TestKind_GoType_unknownPanics(t *testing.T) {
+	t.Parallel()
+
+	defer func() {
+		if recover() == nil {
+			t.Error("GoType() did not panic for an unknown Kind")
+		}
+	}()
+	_ = template.Kind(99).GoType()
+}
+
 func TestTemplate_Params_returnsCopy(t *testing.T) {
 	t.Parallel()
 

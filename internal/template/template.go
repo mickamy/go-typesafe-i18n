@@ -36,6 +36,8 @@ func (k Kind) String() string {
 }
 
 // GoType returns the Go type of values of this kind in generated code.
+// It panics on an unknown Kind: silently defaulting would generate wrongly
+// typed constructors, and this is only reachable from the generator.
 func (k Kind) GoType() string {
 	switch k {
 	case KindString:
@@ -45,7 +47,7 @@ func (k Kind) GoType() string {
 	case KindNumber:
 		return "float64"
 	default:
-		return "string"
+		panic(fmt.Sprintf("template: unknown Kind %d", k))
 	}
 }
 
