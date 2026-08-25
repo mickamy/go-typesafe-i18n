@@ -1,5 +1,8 @@
 # go-typesafe-i18n
 
+> [!IMPORTANT]
+> This repository is archived. Development continues in [kanna](https://github.com/go-kanna/kanna), where go-typesafe-i18n became [`kanna-i18n`](https://github.com/go-kanna/kanna#kanna-i18n).
+
 [![CI](https://github.com/mickamy/go-typesafe-i18n/actions/workflows/ci.yaml/badge.svg)](https://github.com/mickamy/go-typesafe-i18n/actions/workflows/ci.yaml)
 [![Go Reference](https://pkg.go.dev/badge/github.com/mickamy/go-typesafe-i18n.svg)](https://pkg.go.dev/github.com/mickamy/go-typesafe-i18n)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
